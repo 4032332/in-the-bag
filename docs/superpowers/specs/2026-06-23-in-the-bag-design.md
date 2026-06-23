@@ -70,10 +70,11 @@ In the Bag is a one-stop holiday planning and execution app for iOS. It allows u
 **Guest / Demo Mode (tester-only, not in production build):**
 - Demo mode exists solely to allow testers to evaluate the app without creating an account. It is removed before production release and will not be visible to end users.
 - "Continue as Guest (Demo Mode)" button appears on the onboarding splash in development/TestFlight builds only (gated by a build flag, not a feature flag)
-- After tapping "Continue as Guest", the tester is immediately presented with a tier selector: **Free** or **Premium** — this lets testers exercise both feature sets in a single session without needing a subscription
-- The selected tier is stored as a local MMKV flag (`demo_tier`: `free` | `premium`); toggling between tiers is available from a persistent "Demo Mode" banner on every screen
+- After tapping "Continue as Guest", a full-screen tier selector is presented (not dismissable without selecting — there is no back button or close gesture on this screen): two large tappable cards side by side, "Free" and "Premium", each with a brief description of what that tier includes. Tapping either card sets `demo_tier` in MMKV and navigates to the Home screen.
+- The selected tier is stored in MMKV (`demo_tier`: `free` | `premium`)
+- A persistent thin banner is pinned to the top of every screen (below the status bar, above all other content) showing "Demo Mode — [Free / Premium]" with a tappable "Switch" label on the right. Tapping "Switch" shows a simple action sheet: "Switch to Free" / "Switch to Premium" / "Cancel". Switching updates `demo_tier` in MMKV and re-renders the current screen immediately.
 - Demo data is stored in local device storage only; no Supabase records are created
-- All production monetisation gates (RevenueCat, upgrade prompts) are bypassed in demo mode — the selected tier grants full access to its features directly
+- All production monetisation gates (RevenueCat, upgrade prompts, event caps, trip caps) are bypassed in demo mode — the selected tier grants full access to its features directly
 - Guest profiles (uninvited family members managed by primary user) are a separate concept from Guest/Demo mode — see Section 6
 
 ---
@@ -237,7 +238,9 @@ This table stores the per-user per-trip per-banner state. On Summary tab load, t
 **Bottom Tab Bar (persistent):**
 Home — Explore — + (context-sensitive) — Stats — Profile
 
-The Profile tab uses the user's profile photo as its icon (circular crop, same size as standard tab icons). If no profile photo has been set, a placeholder avatar (initials or silhouette) is used. When an active premium subscription is in effect, the profile photo is ringed with a gold border to indicate premium status — the ring appears on the tab bar icon on every screen. This is the only visual premium indicator in the persistent UI.
+The Profile tab uses the user's profile photo as its icon (circular crop, same size as standard tab icons). If no profile photo has been set, a placeholder avatar (initials if a name is available, silhouette if not) is used. When an active premium subscription is in effect, the profile photo is ringed with a gold border to indicate premium status — the ring appears on the tab bar icon on every screen. This is the only visual premium indicator in the persistent UI.
+
+In demo mode: the Profile tab shows a silhouette placeholder (no name, no photo). The gold ring is shown when `demo_tier = 'premium'` — this allows testers to verify the ring rendering without a real subscription.
 
 Settings accessible via gear icon on every screen (not in tab bar).
 
@@ -298,7 +301,7 @@ Settings
 ## 9. Onboarding Flow
 
 1. Splash screen with app logo
-2. Options: Sign Up / Log In / Continue with Apple / Continue with Google / Continue as Guest (Demo Mode)
+2. Options: Sign Up / Log In / Continue with Apple / Continue with Google / Continue as Guest (Demo Mode) *(demo option visible only in development and TestFlight builds, gated by a build flag; hidden in production App Store builds)*
 3. New account setup:
    - Full name
    - Profile photo (optional — all users, free and premium)
@@ -420,7 +423,7 @@ Category → subcategory picker → detail sheet (fields adapt per subcategory �
 
 **On event save (premium users only):** an `in_the_bag_suggest` async job is queued with `event_id` set, generating packing suggestions for that specific event. The In the Bag sheet on the event will show a loading state until the job completes.
 
-**Free tier event cap:** When the user taps + to open Add to Day or Add to Whole Trip, the cap check is enforced at the point the user selects a day. For Add to Day, the day is pre-selected (the current day tab), so the check happens immediately before the category picker. For Add to Whole Trip, the day-picker is shown first; after the user picks a day, the app checks whether that day already has 3 events before proceeding to the category picker — if yes, the upgrade prompt is shown instead. In both cases, the upgrade prompt replaces the category picker entirely (the category picker is never shown). See Section 22 for upgrade prompt content variants by user type. This check applies to authenticated free users only. Demo mode users with the free tier selected are also subject to this cap — it is enforced via the same logic, with no account creation prompt (the demo tier can be toggled from the Demo Mode banner instead).
+**Free tier event cap:** When the user taps + to open Add to Day or Add to Whole Trip, the cap check is enforced at the point the user selects a day. For Add to Day, the day is pre-selected (the current day tab), so the check happens immediately before the category picker. For Add to Whole Trip, the day-picker is shown first; after the user picks a day, the app checks whether that day already has 3 events before proceeding to the category picker — if yes, the upgrade prompt is shown instead. In both cases, the upgrade prompt replaces the category picker entirely (the category picker is never shown). See Section 22 for upgrade prompt content variants by user type. This check applies to authenticated free users only. Demo mode users are not subject to this cap regardless of their selected demo tier — all monetisation gates, including event caps, are bypassed in demo mode.
 
 ---
 
@@ -657,7 +660,8 @@ When a free user taps + to add an event and the selected day already has 3 event
 
 **Greyed-out AI interactions:**
 - Authenticated free users: tapping any greyed-out AI feature shows a full-screen upgrade prompt sheet containing the feature description, pricing options (Monthly / Lifetime), and Subscribe / Restore Purchase / Maybe Later buttons
-- Demo mode users: tapping any greyed-out AI feature shows a prompt explaining that AI features require an account, with "Create a free account" and "Maybe Later" buttons — no subscription purchase options are shown (they cannot purchase without an account)
+- Demo mode — Premium tier: all AI features are fully active; nothing is greyed out
+- Demo mode — Free tier: AI features are greyed out; tapping shows a simple sheet with "Switch to Premium (demo)" and "Maybe Later"; no RevenueCat paywall; tapping "Switch to Premium (demo)" sets `demo_tier = 'premium'` in MMKV and refreshes the screen
 
 **Family Premium Sharing:**
 - One active premium subscriber on a trip sets `is_premium_sponsor = true` for their participant record
