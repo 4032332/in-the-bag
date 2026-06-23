@@ -1,0 +1,203 @@
+<h2>Left Tabs — How narrow should they go?</h2>
+<p class="subtitle">Three width options — pick the one that feels right</p>
+
+<div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;margin-top:24px">
+
+  <!-- Option A: Icon + number only -->
+  <div style="text-align:center">
+    <div class="label" style="margin-bottom:12px">Option A — Minimal</div>
+    <div onclick="selectPhone('a')" id="phone-a" style="cursor:pointer;display:inline-block;border-radius:40px;padding:4px;border:3px solid transparent;transition:border-color 0.2s">
+      <div style="width:230px;height:480px;background:#111;border-radius:36px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+        <div style="height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:#888;font-size:9px;font-family:system-ui">
+          <span>9:41</span><span>●●●</span>
+        </div>
+        <div style="background:#0f172a;border-radius:28px;height:calc(100% - 28px);overflow:hidden;display:flex;flex-direction:column">
+          <div style="background:#1e293b;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155">
+            <span style="color:#94a3b8;font-size:10px;font-family:system-ui">←</span>
+            <span style="color:#f1f5f9;font-size:11px;font-weight:600;font-family:system-ui">🇯🇵 Japan Trip</span>
+            <span style="color:#94a3b8;font-size:12px">⚙️</span>
+          </div>
+          <div style="display:flex;flex:1;overflow:hidden">
+            <!-- Very narrow tabs: just D1, D2... -->
+            <div style="width:32px;background:#0f172a;display:flex;flex-direction:column;gap:2px;padding:4px 2px;border-right:1px solid #1e293b">
+              <div style="background:#4f46e5;border-radius:4px;padding:5px 2px;text-align:center;font-family:system-ui;border-left:2px solid #818cf8">
+                <div style="color:#fff;font-size:6px;font-weight:700">S</div>
+              </div>
+              <div style="background:#1e293b;border-radius:4px;padding:5px 2px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">1</div>
+              </div>
+              <div style="background:#1e293b;border-radius:4px;padding:5px 2px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">2</div>
+              </div>
+              <div style="background:#1e293b;border-radius:4px;padding:5px 2px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">3</div>
+              </div>
+              <div style="background:#1e293b;border-radius:4px;padding:5px 2px;text-align:center;font-family:system-ui;opacity:0.5">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">4</div>
+              </div>
+              <div style="background:#1e293b;border-radius:4px;padding:5px 2px;text-align:center;font-family:system-ui;opacity:0.35">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">5</div>
+              </div>
+            </div>
+            <div style="flex:1;padding:10px 8px;overflow-y:auto;background:#0f172a">
+              <div style="color:#818cf8;font-size:9px;font-weight:700;font-family:system-ui;margin-bottom:6px">Trip Summary</div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#e2e8f0;font-size:7px">✅ Flights booked</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#fbbf24;font-size:7px">⚠️ Travel insurance</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#f87171;font-size:7px">📋 Japan visa</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;font-family:system-ui"><div style="color:#94a3b8;font-size:7px">💊 Medication import</div></div>
+            </div>
+          </div>
+          <div style="background:#1e293b;border-top:1px solid #334155;padding:6px 0 3px;display:flex;justify-content:space-around;align-items:center">
+            <div style="text-align:center"><div style="font-size:12px">🏠</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Trips</div></div>
+            <div style="text-align:center"><div style="font-size:12px">🔍</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Explore</div></div>
+            <div style="background:#4f46e5;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-6px;box-shadow:0 4px 12px rgba(79,70,229,0.5)"><div style="color:white;font-size:14px;line-height:1">+</div></div>
+            <div style="text-align:center"><div style="font-size:12px">👤</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Profile</div></div>
+            <div style="text-align:center"><div style="font-size:12px">⚙️</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Settings</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text-secondary);font-family:system-ui;margin:8px 0 0;max-width:200px">Day number only. Very compact. Tap to see full date in a tooltip.</p>
+  </div>
+
+  <!-- Option B: D1 + MON -->
+  <div style="text-align:center">
+    <div class="label" style="margin-bottom:12px">Option B — Day + Weekday</div>
+    <div onclick="selectPhone('b')" id="phone-b" style="cursor:pointer;display:inline-block;border-radius:40px;padding:4px;border:3px solid transparent;transition:border-color 0.2s">
+      <div style="width:230px;height:480px;background:#111;border-radius:36px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+        <div style="height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:#888;font-size:9px;font-family:system-ui">
+          <span>9:41</span><span>●●●</span>
+        </div>
+        <div style="background:#0f172a;border-radius:28px;height:calc(100% - 28px);overflow:hidden;display:flex;flex-direction:column">
+          <div style="background:#1e293b;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155">
+            <span style="color:#94a3b8;font-size:10px;font-family:system-ui">←</span>
+            <span style="color:#f1f5f9;font-size:11px;font-weight:600;font-family:system-ui">🇯🇵 Japan Trip</span>
+            <span style="color:#94a3b8;font-size:12px">⚙️</span>
+          </div>
+          <div style="display:flex;flex:1;overflow:hidden">
+            <!-- Medium tabs: D1 + MON -->
+            <div style="width:44px;background:#0f172a;display:flex;flex-direction:column;gap:2px;padding:4px 3px;border-right:1px solid #1e293b">
+              <div style="background:#4f46e5;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui;border-left:2px solid #818cf8">
+                <div style="color:#fff;font-size:6px;font-weight:700">SUM</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">D1</div>
+                <div style="color:#64748b;font-size:5px">MON</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">D2</div>
+                <div style="color:#64748b;font-size:5px">TUE</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">D3</div>
+                <div style="color:#64748b;font-size:5px">WED</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui;opacity:0.5">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">D4</div>
+                <div style="color:#64748b;font-size:5px">THU</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui;opacity:0.35">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">D5</div>
+                <div style="color:#64748b;font-size:5px">FRI</div>
+              </div>
+            </div>
+            <div style="flex:1;padding:10px 8px;overflow-y:auto;background:#0f172a">
+              <div style="color:#818cf8;font-size:9px;font-weight:700;font-family:system-ui;margin-bottom:6px">Trip Summary</div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#e2e8f0;font-size:7px">✅ Flights booked</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#fbbf24;font-size:7px">⚠️ Travel insurance</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#f87171;font-size:7px">📋 Japan visa</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;font-family:system-ui"><div style="color:#94a3b8;font-size:7px">💊 Medication import</div></div>
+            </div>
+          </div>
+          <div style="background:#1e293b;border-top:1px solid #334155;padding:6px 0 3px;display:flex;justify-content:space-around;align-items:center">
+            <div style="text-align:center"><div style="font-size:12px">🏠</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Trips</div></div>
+            <div style="text-align:center"><div style="font-size:12px">🔍</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Explore</div></div>
+            <div style="background:#4f46e5;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-6px;box-shadow:0 4px 12px rgba(79,70,229,0.5)"><div style="color:white;font-size:14px;line-height:1">+</div></div>
+            <div style="text-align:center"><div style="font-size:12px">👤</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Profile</div></div>
+            <div style="text-align:center"><div style="font-size:12px">⚙️</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Settings</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text-secondary);font-family:system-ui;margin:8px 0 0;max-width:200px">Day number + weekday. Good balance of info and space.</p>
+  </div>
+
+  <!-- Option C: D1 + MON + date -->
+  <div style="text-align:center">
+    <div class="label" style="margin-bottom:12px">Option C — Day + Weekday + Date</div>
+    <div onclick="selectPhone('c')" id="phone-c" style="cursor:pointer;display:inline-block;border-radius:40px;padding:4px;border:3px solid transparent;transition:border-color 0.2s">
+      <div style="width:230px;height:480px;background:#111;border-radius:36px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+        <div style="height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;color:#888;font-size:9px;font-family:system-ui">
+          <span>9:41</span><span>●●●</span>
+        </div>
+        <div style="background:#0f172a;border-radius:28px;height:calc(100% - 28px);overflow:hidden;display:flex;flex-direction:column">
+          <div style="background:#1e293b;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #334155">
+            <span style="color:#94a3b8;font-size:10px;font-family:system-ui">←</span>
+            <span style="color:#f1f5f9;font-size:11px;font-weight:600;font-family:system-ui">🇯🇵 Japan Trip</span>
+            <span style="color:#94a3b8;font-size:12px">⚙️</span>
+          </div>
+          <div style="display:flex;flex:1;overflow:hidden">
+            <!-- Wider tabs: D1 + MON + 14/7 -->
+            <div style="width:56px;background:#0f172a;display:flex;flex-direction:column;gap:2px;padding:4px 3px;border-right:1px solid #1e293b">
+              <div style="background:#4f46e5;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui;border-left:2px solid #818cf8">
+                <div style="color:#fff;font-size:6px;font-weight:700">SUMM</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">Day 1</div>
+                <div style="color:#64748b;font-size:5px">MON</div>
+                <div style="color:#64748b;font-size:5px">14/7</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">Day 2</div>
+                <div style="color:#64748b;font-size:5px">TUE</div>
+                <div style="color:#64748b;font-size:5px">15/7</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">Day 3</div>
+                <div style="color:#64748b;font-size:5px">WED</div>
+                <div style="color:#64748b;font-size:5px">16/7</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui;opacity:0.5">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">Day 4</div>
+                <div style="color:#64748b;font-size:5px">THU</div>
+                <div style="color:#64748b;font-size:5px">17/7</div>
+              </div>
+              <div style="background:#1e293b;border-radius:5px;padding:5px 3px;text-align:center;font-family:system-ui;opacity:0.35">
+                <div style="color:#94a3b8;font-size:6px;font-weight:700">Day 5</div>
+                <div style="color:#64748b;font-size:5px">FRI</div>
+                <div style="color:#64748b;font-size:5px">18/7</div>
+              </div>
+            </div>
+            <div style="flex:1;padding:10px 8px;overflow-y:auto;background:#0f172a">
+              <div style="color:#818cf8;font-size:9px;font-weight:700;font-family:system-ui;margin-bottom:6px">Trip Summary</div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#e2e8f0;font-size:7px">✅ Flights booked</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#fbbf24;font-size:7px">⚠️ Travel insurance</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;margin-bottom:4px;font-family:system-ui"><div style="color:#f87171;font-size:7px">📋 Japan visa</div></div>
+              <div style="background:#1e293b;border-radius:5px;padding:6px;font-family:system-ui"><div style="color:#94a3b8;font-size:7px">💊 Medication import</div></div>
+            </div>
+          </div>
+          <div style="background:#1e293b;border-top:1px solid #334155;padding:6px 0 3px;display:flex;justify-content:space-around;align-items:center">
+            <div style="text-align:center"><div style="font-size:12px">🏠</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Trips</div></div>
+            <div style="text-align:center"><div style="font-size:12px">🔍</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Explore</div></div>
+            <div style="background:#4f46e5;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-6px;box-shadow:0 4px 12px rgba(79,70,229,0.5)"><div style="color:white;font-size:14px;line-height:1">+</div></div>
+            <div style="text-align:center"><div style="font-size:12px">👤</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Profile</div></div>
+            <div style="text-align:center"><div style="font-size:12px">⚙️</div><div style="color:#64748b;font-size:6px;font-family:system-ui">Settings</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text-secondary);font-family:system-ui;margin:8px 0 0;max-width:200px">Full info — day, weekday, date. Most informative but narrowest content area.</p>
+  </div>
+
+</div>
+
+<script>
+function selectPhone(id) {
+  ['a','b','c'].forEach(function(x) {
+    document.getElementById('phone-' + x).style.borderColor = 'transparent';
+  });
+  document.getElementById('phone-' + id).style.borderColor = '#4f46e5';
+  var labels = {a: 'Minimal - number only', b: 'Day + Weekday', c: 'Day + Weekday + Date'};
+  if (window.recordEvent) window.recordEvent({type:'click', choice: id, text: labels[id]});
+}
+</script>
