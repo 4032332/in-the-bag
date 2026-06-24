@@ -5,8 +5,6 @@ import { AuthProvider } from '../src/providers/AuthProvider';
 import { DemoModeProvider } from '../src/providers/DemoModeProvider';
 import { DemoBanner } from '../src/components/DemoBanner';
 import { StyleSheet } from 'react-native';
-import 'react-native-url-polyfill/auto';
-
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={styles.root}>

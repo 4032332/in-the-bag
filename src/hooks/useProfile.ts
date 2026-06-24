@@ -11,7 +11,9 @@ export function useProfile() {
 
   useEffect(() => {
     if (!user) { setProfile(null); return; }
-    supabase.from('users').select('*').eq('id', user.id).single().then(({ data }) => setProfile(data));
+    supabase.from('users').select('*').eq('id', user.id).single().then(({ data, error }) => {
+      if (!error) setProfile(data);
+    });
   }, [user?.id]);
 
   return profile;

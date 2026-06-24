@@ -16,6 +16,7 @@ export default function SetupNameScreen() {
   }
 
   async function handleNext() {
+    if (!user) { Alert.alert('Session expired', 'Please sign in again.'); return; }
     if (!fullName.trim()) { Alert.alert('Please enter your full name.'); return; }
 
     let profilePhotoUrl: string | null = null;
@@ -30,7 +31,7 @@ export default function SetupNameScreen() {
       profilePhotoUrl = urlData.publicUrl;
     }
 
-    const { error } = await supabase.from('users').update({ full_name: fullName.trim(), ...(profilePhotoUrl ? { profile_photo_url: profilePhotoUrl } : {}) }).eq('id', user!.id);
+    const { error } = await supabase.from('users').update({ full_name: fullName.trim(), ...(profilePhotoUrl ? { profile_photo_url: profilePhotoUrl } : {}) }).eq('id', user.id);
     if (error) { Alert.alert('Error', error.message); return; }
     router.push('/onboarding/setup-location');
   }

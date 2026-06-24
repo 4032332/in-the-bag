@@ -12,6 +12,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
+    }).catch(() => {
+      // network error at cold start — proceed unauthenticated
+    }).finally(() => {
       setLoading(false);
     });
 
