@@ -24,20 +24,22 @@ const CATEGORIES: CategoryItem[] = [
 
 interface Props {
   isCruise: boolean;
+  isPremium: boolean;
   onSelect: (category: EventCategory) => void;
 }
 
-export function CategoryPicker({ isCruise, onSelect }: Props) {
+export function CategoryPicker({ isCruise, isPremium, onSelect }: Props) {
   const filtered = CATEGORIES.filter((c) => !c.isCruiseOnly || isCruise);
 
   return (
     <ScrollView contentContainerStyle={styles.grid}>
-      <Text style={styles.hint}>Add with AI</Text>
-      <View style={[styles.aiBtn, styles.aiBtnDisabled]}>
+      <View style={[styles.aiBtn, !isPremium && styles.aiBtnDisabled]}>
         <Text style={styles.aiBtnText}>Add with AI</Text>
-        <View style={styles.premiumBadge}>
-          <Text style={styles.premiumBadgeText}>Premium</Text>
-        </View>
+        {!isPremium && (
+          <View style={styles.premiumBadge}>
+            <Text style={styles.premiumBadgeText}>Premium</Text>
+          </View>
+        )}
       </View>
       {filtered.map((cat) => (
         <TouchableOpacity

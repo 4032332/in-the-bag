@@ -263,7 +263,7 @@ export function AddToWholeTripSheet({
         ) : null}
 
         {step === 'category' ? (
-          <CategoryPicker isCruise={isCruise} onSelect={handleCategorySelected} />
+          <CategoryPicker isCruise={isCruise} isPremium={isPremium} onSelect={handleCategorySelected} />
         ) : null}
 
         {step === 'subcategory' && category ? (

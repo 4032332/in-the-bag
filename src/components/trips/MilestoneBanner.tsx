@@ -11,6 +11,7 @@ const BANNER_CONFIG: Record<MilestoneBannerState['banner_key'], {
     actions: [
       { label: 'Yes, sorted', action: 'confirm' },
       { label: 'Remind me later', action: 'snooze' },
+      { label: 'Dismiss', action: 'dismiss' },
     ],
   },
   visa_14d: {
@@ -25,6 +26,7 @@ const BANNER_CONFIG: Record<MilestoneBannerState['banner_key'], {
     actions: [
       { label: 'Done', action: 'confirm' },
       { label: 'Remind me later', action: 'snooze' },
+      { label: 'Dismiss', action: 'dismiss' },
     ],
   },
   offline_docs_7d: {
@@ -32,12 +34,14 @@ const BANNER_CONFIG: Record<MilestoneBannerState['banner_key'], {
     actions: [
       { label: 'Save Now', action: 'save_now' },
       { label: 'Later', action: 'snooze' },
+      { label: 'Dismiss', action: 'dismiss' },
     ],
   },
   wifi_day_of: {
     title: 'Connect to airport WiFi as soon as you land',
     actions: [
       { label: 'Got it', action: 'dismiss' },
+      { label: 'Remind me later', action: 'snooze' },
     ],
   },
 };

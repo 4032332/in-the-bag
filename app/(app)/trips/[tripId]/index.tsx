@@ -59,7 +59,7 @@ export default function TripScreen() {
           {activeView === 'summary' ? (
             <TripSummary trip={trip} userId={user?.id ?? ''} isReadOnly={isReadOnly} />
           ) : (
-            <DayView tripDayId={activeView} tripId={tripId} isReadOnly={isReadOnly} />
+            <DayView tripDayId={activeView} tripId={tripId} isReadOnly={isReadOnly} onAddEvent={() => { /* AddToDaySheet wired in Task 7 */ }} />
           )}
         </View>
       </View>
