@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { Control, Controller, FieldErrors } from 'react-hook-form';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Control, Controller, FieldErrors, useWatch } from 'react-hook-form';
 import { getEventFields } from '../../lib/eventFieldConfig';
 import { EventCategory } from '../../types/database';
 
@@ -10,10 +10,13 @@ interface Props {
   control: Control<Record<string, string>>;
   errors: FieldErrors<Record<string, string>>;
   dietaryReminder?: string | null;
+  onLookupFlight?: (flightNumber: string) => void;
+  flightLookupLoading?: boolean;
 }
 
-export function EventDetailFields({ category, subcategory, control, errors, dietaryReminder }: Props) {
+export function EventDetailFields({ category, subcategory, control, errors, dietaryReminder, onLookupFlight, flightLookupLoading }: Props) {
   const fields = getEventFields(category, subcategory);
+  const currentFlightNumber = useWatch({ control, name: 'flight_number' });
 
   return (
     <View>
@@ -28,28 +31,43 @@ export function EventDetailFields({ category, subcategory, control, errors, diet
             {field.label}
             {field.required ? ' *' : ''}
           </Text>
-          <Controller
-            control={control}
-            name={field.name}
-            defaultValue=""
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={[styles.input, field.type === 'textarea' && styles.textarea]}
-                value={value ?? ''}
-                onChangeText={onChange}
-                placeholder={field.placeholder ?? ''}
-                multiline={field.type === 'textarea'}
-                numberOfLines={field.type === 'textarea' ? 3 : 1}
-                keyboardType={
-                  field.type === 'phone'
-                    ? 'phone-pad'
-                    : field.type === 'email'
-                    ? 'email-address'
-                    : 'default'
-                }
-              />
+          <View style={field.name === 'flight_number' ? styles.flightNumberRow : undefined}>
+            <Controller
+              control={control}
+              name={field.name}
+              defaultValue=""
+              render={({ field: { onChange, value } }) => (
+                <TextInput
+                  style={[styles.input, field.type === 'textarea' && styles.textarea, field.name === 'flight_number' && styles.flightInput]}
+                  value={value ?? ''}
+                  onChangeText={onChange}
+                  placeholder={field.placeholder ?? ''}
+                  multiline={field.type === 'textarea'}
+                  numberOfLines={field.type === 'textarea' ? 3 : 1}
+                  keyboardType={
+                    field.type === 'phone'
+                      ? 'phone-pad'
+                      : field.type === 'email'
+                      ? 'email-address'
+                      : 'default'
+                  }
+                />
+              )}
+            />
+            {field.name === 'flight_number' && onLookupFlight && (
+              <TouchableOpacity 
+                style={styles.lookupBtn} 
+                onPress={() => currentFlightNumber && onLookupFlight(currentFlightNumber)}
+                disabled={!currentFlightNumber || flightLookupLoading}
+              >
+                {flightLookupLoading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.lookupBtnText}>Lookup</Text>
+                )}
+              </TouchableOpacity>
             )}
-          />
+          </View>
           {errors[field.name] ? (
             <Text style={styles.error}>{errors[field.name]?.message}</Text>
           ) : null}
@@ -71,6 +89,16 @@ const styles = StyleSheet.create({
   dietaryText: { fontSize: 13, color: '#5d4037' },
   fieldRow: { marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '500', color: '#333', marginBottom: 4 },
+  flightNumberRow: { flexDirection: 'row', gap: 8 },
+  flightInput: { flex: 1 },
+  lookupBtn: {
+    backgroundColor: '#007AFF',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lookupBtnText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   input: {
     borderWidth: 1,
     borderColor: '#ddd',
