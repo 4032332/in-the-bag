@@ -1,0 +1,240 @@
+<h2>Treasure Map — Spiral Path</h2>
+<p class="subtitle">Tiles placed organically around the map, connected by a path that spirals inward toward the final day.</p>
+
+<div style="display:flex;gap:40px;justify-content:center;flex-wrap:wrap;margin-top:24px;align-items:flex-start">
+
+  <div style="text-align:center">
+    <div style="display:inline-block;border-radius:40px;padding:4px;border:3px solid #6b4c1e">
+      <div style="width:270px;height:560px;background:#1a1008;border-radius:36px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,0.6)">
+        <div style="height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#666;font-size:9px;font-family:system-ui">
+          <span>9:41</span><span style="letter-spacing:1px">. . . .</span>
+        </div>
+        <div style="border-radius:28px;height:calc(100% - 28px);overflow:hidden;display:flex;flex-direction:column">
+
+          <div style="background:#1c1108;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(160,120,50,0.35)">
+            <span style="color:#a07832;font-size:10px;font-family:system-ui;font-weight:600">Back</span>
+            <span style="color:#e8d5a0;font-size:11px;font-weight:700;font-family:Georgia,serif;letter-spacing:0.5px">Japan — 7 Days</span>
+            <span style="color:#a07832;font-size:10px;font-family:system-ui">Settings</span>
+          </div>
+
+          <div style="flex:1;position:relative;overflow:hidden">
+
+            <!-- Parchment background -->
+            <div style="position:absolute;inset:0;background:
+              radial-gradient(ellipse at 20% 15%, #cead72 0%, transparent 45%),
+              radial-gradient(ellipse at 80% 80%, #b8925a 0%, transparent 40%),
+              radial-gradient(ellipse at 50% 50%, #d2b678 0%, #be9e58 70%, #a88540 100%)
+            "></div>
+            <div style="position:absolute;inset:0;background:
+              radial-gradient(ellipse at 5% 95%, rgba(70,38,8,0.28) 0%, transparent 30%),
+              radial-gradient(ellipse at 95% 5%, rgba(70,38,8,0.22) 0%, transparent 28%)
+            "></div>
+
+            <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 270 470" xmlns="http://www.w3.org/2000/svg">
+
+              <!-- Decorative border -->
+              <g opacity="0.22" stroke="#3d2200" stroke-width="1" fill="none">
+                <path d="M4,4 L22,4 L22,8 M4,4 L4,22 L8,22"/>
+                <path d="M266,4 L248,4 L248,8 M266,4 L266,22 L262,22"/>
+                <path d="M4,466 L22,466 L22,462 M4,466 L4,448 L8,448"/>
+                <path d="M266,466 L248,466 L248,462 M266,466 L266,448 L262,448"/>
+              </g>
+
+              <!-- Mt Fuji — background, large and faded -->
+              <g opacity="0.10" transform="translate(82,10)">
+                <polyline points="0,80 40,18 55,5 70,18 110,80" fill="none" stroke="#3d2200" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="34,38 55,22 76,38" fill="none" stroke="#3d2200" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="48" y1="16" x2="44" y2="28" stroke="#3d2200" stroke-width="1.2"/>
+                <line x1="55" y1="8" x2="51" y2="24" stroke="#3d2200" stroke-width="1.2"/>
+                <line x1="62" y1="16" x2="66" y2="28" stroke="#3d2200" stroke-width="1.2"/>
+                <!-- slope hatching -->
+                <line x1="38" y1="46" x2="35" y2="62" stroke="#3d2200" stroke-width="0.7"/>
+                <line x1="44" y1="42" x2="42" y2="60" stroke="#3d2200" stroke-width="0.7"/>
+                <line x1="50" y1="40" x2="49" y2="60" stroke="#3d2200" stroke-width="0.7"/>
+                <line x1="62" y1="42" x2="64" y2="60" stroke="#3d2200" stroke-width="0.7"/>
+                <line x1="68" y1="46" x2="71" y2="62" stroke="#3d2200" stroke-width="0.7"/>
+              </g>
+
+              <!-- Torii gate — mid-right -->
+              <g opacity="0.13" transform="translate(200,165)">
+                <line x1="0" y1="36" x2="54" y2="36" stroke="#3d2200" stroke-width="2" stroke-linecap="round"/>
+                <line x1="5" y1="28" x2="49" y2="28" stroke="#3d2200" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="10" y1="28" x2="10" y2="64" stroke="#3d2200" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="44" y1="28" x2="44" y2="64" stroke="#3d2200" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="-4" y1="36" x2="4" y2="28" stroke="#3d2200" stroke-width="1.2"/>
+                <line x1="58" y1="36" x2="50" y2="28" stroke="#3d2200" stroke-width="1.2"/>
+              </g>
+
+              <!-- Pagoda — bottom left -->
+              <g opacity="0.12" transform="translate(12,355)">
+                <rect x="10" y="50" width="28" height="14" fill="none" stroke="#3d2200" stroke-width="1"/>
+                <polyline points="6,50 24,40 42,50" fill="none" stroke="#3d2200" stroke-width="1.2" stroke-linejoin="round"/>
+                <rect x="12" y="36" width="24" height="14" fill="none" stroke="#3d2200" stroke-width="1"/>
+                <polyline points="8,36 24,26 40,36" fill="none" stroke="#3d2200" stroke-width="1.2" stroke-linejoin="round"/>
+                <rect x="14" y="22" width="20" height="14" fill="none" stroke="#3d2200" stroke-width="1"/>
+                <polyline points="10,22 24,12 38,22" fill="none" stroke="#3d2200" stroke-width="1.2" stroke-linejoin="round"/>
+                <line x1="24" y1="12" x2="24" y2="5" stroke="#3d2200" stroke-width="1"/>
+              </g>
+
+              <!-- Cherry blossoms — top right area -->
+              <g opacity="0.12" transform="translate(215,55)">
+                <line x1="18" y1="65" x2="18" y2="25" stroke="#3d2200" stroke-width="2" stroke-linecap="round"/>
+                <line x1="18" y1="48" x2="4" y2="34" stroke="#3d2200" stroke-width="1.2" stroke-linecap="round"/>
+                <line x1="18" y1="42" x2="32" y2="30" stroke="#3d2200" stroke-width="1.2" stroke-linecap="round"/>
+                <circle cx="18" cy="15" r="13" fill="none" stroke="#3d2200" stroke-width="1.2"/>
+                <circle cx="6" cy="23" r="8" fill="none" stroke="#3d2200" stroke-width="1"/>
+                <circle cx="30" cy="21" r="9" fill="none" stroke="#3d2200" stroke-width="1"/>
+                <circle cx="12" cy="11" r="1.5" fill="#3d2200" opacity="0.5"/>
+                <circle cx="20" cy="7" r="1.5" fill="#3d2200" opacity="0.5"/>
+                <circle cx="26" cy="13" r="1.5" fill="#3d2200" opacity="0.5"/>
+              </g>
+
+              <!-- Water/ocean waves — bottom right -->
+              <g opacity="0.11" transform="translate(150,415)">
+                <path d="M0,8 Q10,0 20,8 Q30,16 40,8 Q50,0 60,8 Q70,16 80,8 Q90,0 100,8" fill="none" stroke="#3d2200" stroke-width="1" stroke-linecap="round"/>
+                <path d="M0,18 Q10,10 20,18 Q30,26 40,18 Q50,10 60,18 Q70,26 80,18" fill="none" stroke="#3d2200" stroke-width="0.8" stroke-linecap="round"/>
+                <path d="M10,28 Q20,20 30,28 Q40,36 50,28 Q60,20 70,28" fill="none" stroke="#3d2200" stroke-width="0.6" stroke-linecap="round"/>
+              </g>
+
+              <!-- Compass rose — mid left -->
+              <g opacity="0.2" transform="translate(8,200)">
+                <circle cx="18" cy="18" r="16" fill="none" stroke="#3d2200" stroke-width="1"/>
+                <circle cx="18" cy="18" r="4" fill="none" stroke="#3d2200" stroke-width="0.8"/>
+                <line x1="18" y1="2" x2="18" y2="34" stroke="#3d2200" stroke-width="0.8"/>
+                <line x1="2" y1="18" x2="34" y2="18" stroke="#3d2200" stroke-width="0.8"/>
+                <line x1="6" y1="6" x2="30" y2="30" stroke="#3d2200" stroke-width="0.5"/>
+                <line x1="30" y1="6" x2="6" y2="30" stroke="#3d2200" stroke-width="0.5"/>
+                <polygon points="18,2 15,12 21,12" fill="#3d2200" opacity="0.75"/>
+                <polygon points="18,34 15,24 21,24" fill="#3d2200" opacity="0.4"/>
+                <text x="15" y="0.5" font-size="6" fill="#3d2200" font-family="Georgia,serif" font-weight="bold">N</text>
+              </g>
+
+              <!-- === SPIRAL DOTTED PATH ===
+                Day 1 tile top-left  → center ~(62, 42)
+                Day 2 tile top-right → center ~(205, 42)
+                Day 3 tile bot-right → center ~(205, 295)
+                Day 4 tile bot-left  → center ~(60, 295)
+                Day 5 tile center    → center ~(133, 198)
+
+                Path sweeps: top-left → arc over top → top-right
+                           → arc down right side → bot-right
+                           → arc along bottom → bot-left
+                           → curve inward to centre
+              -->
+              <path
+                d="M 62,42
+                   C 62,-28  205,-28  205,42
+                   C 245,120  245,220  205,295
+                   C 175,368  88,368   60,295
+                   C 32,240   78,210   133,198"
+                fill="none"
+                stroke="#6b3d0a"
+                stroke-width="2"
+                stroke-dasharray="5,5"
+                stroke-linecap="round"
+                opacity="0.78"
+              />
+
+              <!-- Small X mark at final destination (Day 5, center) -->
+              <g transform="translate(133,198)" opacity="0.55">
+                <line x1="-6" y1="-6" x2="6" y2="6" stroke="#7a1a0a" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="6" y1="-6" x2="-6" y2="6" stroke="#7a1a0a" stroke-width="2.5" stroke-linecap="round"/>
+              </g>
+
+            </svg>
+
+            <!-- === DAY TILES === -->
+
+            <!-- Day 1: top-left -->
+            <div style="position:absolute;top:18px;left:12px;width:90px;transform:rotate(-2deg)">
+              <div style="background:rgba(245,228,180,0.94);border:1.5px solid #7a5020;border-radius:4px;padding:6px 7px;box-shadow:2px 3px 8px rgba(0,0,0,0.35)">
+                <div style="color:#7a5020;font-size:5.5px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;border-bottom:1px solid rgba(122,80,32,0.3);padding-bottom:2px;margin-bottom:3px">Day 1 — Mon 14/7</div>
+                <div style="color:#2d1a06;font-size:7.5px;font-family:Georgia,serif;font-weight:700">Arrive Tokyo</div>
+                <div style="color:#6b4515;font-size:6px;font-family:system-ui;margin-top:2px">Flight · Hotel Check-in</div>
+              </div>
+            </div>
+
+            <!-- Day 2: top-right -->
+            <div style="position:absolute;top:18px;left:158px;width:94px;transform:rotate(1.5deg)">
+              <div style="background:rgba(245,228,180,0.94);border:1.5px solid #7a5020;border-radius:4px;padding:6px 7px;box-shadow:2px 3px 8px rgba(0,0,0,0.35)">
+                <div style="color:#7a5020;font-size:5.5px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;border-bottom:1px solid rgba(122,80,32,0.3);padding-bottom:2px;margin-bottom:3px">Day 2 — Tue 15/7</div>
+                <div style="color:#2d1a06;font-size:7.5px;font-family:Georgia,serif;font-weight:700">Shibuya & Harajuku</div>
+                <div style="color:#6b4515;font-size:6px;font-family:system-ui;margin-top:2px">Sightseeing · Meal · Show</div>
+              </div>
+            </div>
+
+            <!-- Day 3: bottom-right -->
+            <div style="position:absolute;top:270px;left:158px;width:94px;transform:rotate(-1.2deg)">
+              <div style="background:rgba(245,228,180,0.94);border:1.5px solid #7a5020;border-radius:4px;padding:6px 7px;box-shadow:2px 3px 8px rgba(0,0,0,0.35)">
+                <div style="color:#7a5020;font-size:5.5px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;border-bottom:1px solid rgba(122,80,32,0.3);padding-bottom:2px;margin-bottom:3px">Day 3 — Wed 16/7</div>
+                <div style="color:#2d1a06;font-size:7.5px;font-family:Georgia,serif;font-weight:700">Kyoto Day Trip</div>
+                <div style="color:#6b4515;font-size:6px;font-family:system-ui;margin-top:2px">Rail · Temple · Meal</div>
+              </div>
+            </div>
+
+            <!-- Day 4: bottom-left -->
+            <div style="position:absolute;top:270px;left:10px;width:94px;transform:rotate(1.8deg)">
+              <div style="background:rgba(245,228,180,0.94);border:1.5px solid #7a5020;border-radius:4px;padding:6px 7px;box-shadow:2px 3px 8px rgba(0,0,0,0.35)">
+                <div style="color:#7a5020;font-size:5.5px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;border-bottom:1px solid rgba(122,80,32,0.3);padding-bottom:2px;margin-bottom:3px">Day 4 — Thu 17/7</div>
+                <div style="color:#2d1a06;font-size:7.5px;font-family:Georgia,serif;font-weight:700">Mt Fuji & Hakone</div>
+                <div style="color:#6b4515;font-size:6px;font-family:system-ui;margin-top:2px">Sightseeing · Ryokan</div>
+              </div>
+            </div>
+
+            <!-- Day 5: center — the "treasure" -->
+            <div style="position:absolute;top:173px;left:85px;width:96px;transform:rotate(-0.5deg)">
+              <div style="background:rgba(245,228,180,0.96);border:2px solid #7a2a08;border-radius:4px;padding:6px 7px;box-shadow:3px 4px 12px rgba(0,0,0,0.45)">
+                <div style="color:#7a2a08;font-size:5.5px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;border-bottom:1px solid rgba(122,42,8,0.35);padding-bottom:2px;margin-bottom:3px">Day 5 — Fri 18/7</div>
+                <div style="color:#2d1a06;font-size:7.5px;font-family:Georgia,serif;font-weight:700">Akihabara & Ueno</div>
+                <div style="color:#7a2a08;font-size:6px;font-family:system-ui;margin-top:2px">Sightseeing · Exhibition</div>
+              </div>
+            </div>
+
+            <!-- Backpack floating button -->
+            <div style="position:absolute;bottom:10px;right:10px;width:32px;height:32px;background:rgba(28,16,5,0.9);border:1.5px solid rgba(160,120,50,0.85);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(0,0,0,0.5)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8a050" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 20V10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+                <path d="M9 6V5a3 3 0 0 1 6 0v1"/>
+                <line x1="12" y1="12" x2="12" y2="16"/>
+                <line x1="10" y1="14" x2="14" y2="14"/>
+              </svg>
+            </div>
+
+          </div>
+
+          <!-- Bottom bar -->
+          <div style="background:#1c1108;border-top:1px solid rgba(160,120,50,0.3);padding:7px 0 4px;display:flex;justify-content:space-around;align-items:center">
+            <div style="text-align:center"><div style="color:#a07832;font-size:9px;font-family:Georgia,serif">Home</div></div>
+            <div style="text-align:center"><div style="color:#5a3d18;font-size:9px;font-family:Georgia,serif">Explore</div></div>
+            <div style="background:#8b5e1a;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-7px;box-shadow:0 4px 12px rgba(139,94,26,0.6)">
+              <div style="color:#f5e6c8;font-size:18px;line-height:1;font-family:system-ui;margin-top:-1px">+</div>
+            </div>
+            <div style="text-align:center"><div style="color:#5a3d18;font-size:9px;font-family:Georgia,serif">Profile</div></div>
+            <div style="text-align:center"><div style="color:#5a3d18;font-size:9px;font-family:Georgia,serif">Settings</div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:240px">
+    <div class="section">
+      <h3>What changed</h3>
+      <ul style="font-family:system-ui;font-size:13px;color:var(--text-secondary);line-height:1.8;padding-left:18px;margin:0">
+        <li>Tiles placed at the four corners + centre — no more zigzag column</li>
+        <li>The path arcs over the top, sweeps down the right, along the bottom, then spirals inward to the final day</li>
+        <li>Final day (Day 5) sits at the centre of the spiral, with a darker border and a small X mark behind it — the treasure</li>
+        <li>Each tile has a different rotation angle for a hand-placed feel</li>
+      </ul>
+    </div>
+    <div class="section" style="margin-top:16px">
+      <h3>Notes</h3>
+      <ul style="font-family:system-ui;font-size:13px;color:var(--text-secondary);line-height:1.8;padding-left:18px;margin:0">
+        <li>On longer trips the spiral would expand — more loops, more tiles before reaching the centre</li>
+        <li>The Imagen 3 background would reinforce the spiral shape with geography and illustration features drawn to match the path</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
