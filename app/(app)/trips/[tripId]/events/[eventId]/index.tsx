@@ -40,24 +40,24 @@ export default function EventScreen() {
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [showTransportSheet, setShowTransportSheet] = useState(false);
 
-  if (!eventId || !tripId || !tripDayId) return null;
-
-  async function loadEvent() {
-    try {
-      const data = await getEvent(eventId!);
-      setEvent(data);
-    } catch {
-      Alert.alert('Error', 'Failed to load event.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useFocusEffect(
     useCallback(() => {
+      if (!eventId) return;
+      async function loadEvent() {
+        try {
+          const data = await getEvent(eventId as string);
+          setEvent(data);
+        } catch {
+          Alert.alert('Error', 'Failed to load event.');
+        } finally {
+          setLoading(false);
+        }
+      }
       loadEvent();
     }, [eventId]),
   );
+
+  if (!eventId || !tripId || !tripDayId) return null;
 
   async function handleDelete() {
     Alert.alert('Delete event', 'This cannot be undone.', [

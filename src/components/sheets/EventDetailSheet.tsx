@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Modal,
   View,
@@ -58,6 +58,12 @@ export function EventDetailSheet({
   } = useForm<Record<string, string>>({ defaultValues: initialValues });
 
   const isEditMode = Boolean(eventId);
+
+  useEffect(() => {
+    if (visible) {
+      reset(initialValues ?? {});
+    }
+  }, [visible, eventId]);
 
   async function onSave(formData: Record<string, string>) {
     if (!user) {
