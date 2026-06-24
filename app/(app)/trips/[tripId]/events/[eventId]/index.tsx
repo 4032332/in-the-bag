@@ -131,6 +131,19 @@ export default function EventScreen() {
         subcategory={event.subcategory}
         isPremium={isPremium}
         isDemoMode={isDemoMode}
+        eventId={event.id}
+        initialValues={{
+          title: event.title ?? '',
+          start_time: event.start_time ?? '',
+          end_time: event.end_time ?? '',
+          address: event.address ?? '',
+          contact_name: event.contact_name ?? '',
+          contact_phone: event.contact_phone ?? '',
+          contact_email: event.contact_email ?? '',
+          confirmation_number: event.confirmation_number ?? '',
+          reservation_details: event.reservation_details ?? '',
+          notes: event.notes ?? '',
+        }}
         onClose={() => setShowEditSheet(false)}
         onEventCreated={() => {
           setShowEditSheet(false);

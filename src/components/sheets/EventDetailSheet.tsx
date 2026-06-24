@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useForm } from 'react-hook-form';
 import { EventCategory } from '../../types/database';
-import { createEvent } from '../../services/events';
+import { createEvent, updateEvent } from '../../services/events';
 import { enqueueJob } from '../../lib/asyncJobQueue';
 import { getEventFields } from '../../lib/eventFieldConfig';
 import { useAuth } from '../../hooks/useAuth';
@@ -27,6 +27,10 @@ interface Props {
   isPremium: boolean;
   isDemoMode: boolean;
   dietaryReminder?: string | null;
+  /** When provided, sheet is in edit mode and calls updateEvent instead of createEvent */
+  eventId?: string;
+  /** Pre-populated field values for edit mode */
+  initialValues?: Record<string, string>;
   onClose: () => void;
   onEventCreated: () => void;
 }
@@ -40,6 +44,8 @@ export function EventDetailSheet({
   isPremium,
   isDemoMode,
   dietaryReminder,
+  eventId,
+  initialValues,
   onClose,
   onEventCreated,
 }: Props) {
@@ -49,7 +55,9 @@ export function EventDetailSheet({
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<Record<string, string>>();
+  } = useForm<Record<string, string>>({ defaultValues: initialValues });
+
+  const isEditMode = Boolean(eventId);
 
   async function onSave(formData: Record<string, string>) {
     if (!user) {
@@ -67,11 +75,7 @@ export function EventDetailSheet({
     }
 
     try {
-      const newEvent = await createEvent({
-        trip_day_id: tripDayId,
-        trip_id: tripId,
-        category,
-        subcategory: subcategory ?? null,
+      const payload = {
         title: formData.title?.trim() ?? '',
         start_time: formData.start_time ?? null,
         end_time: formData.end_time ?? null,
@@ -82,18 +86,30 @@ export function EventDetailSheet({
         confirmation_number: formData.confirmation_number ?? null,
         reservation_details: formData.reservation_details ?? null,
         notes: formData.notes ?? null,
-        linked_transport_event_id: null,
-        display_order: 0,
-      });
+      };
 
-      if (isPremium && !isDemoMode) {
-        await enqueueJob({
-          type: 'in_the_bag_suggest',
-          input: { event_id: newEvent.id, trip_id: tripId, trip_day_id: tripDayId },
-          event_id: newEvent.id,
+      if (isEditMode && eventId) {
+        await updateEvent(eventId, payload);
+      } else {
+        const newEvent = await createEvent({
+          trip_day_id: tripDayId,
           trip_id: tripId,
-          user_id: user.id,
+          category,
+          subcategory: subcategory ?? null,
+          linked_transport_event_id: null,
+          display_order: 0,
+          ...payload,
         });
+
+        if (isPremium && !isDemoMode) {
+          await enqueueJob({
+            type: 'in_the_bag_suggest',
+            input: { event_id: newEvent.id, trip_id: tripId, trip_day_id: tripDayId },
+            event_id: newEvent.id,
+            trip_id: tripId,
+            user_id: user.id,
+          });
+        }
       }
 
       reset();
