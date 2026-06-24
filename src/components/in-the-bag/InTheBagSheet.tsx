@@ -22,6 +22,7 @@ export type InTheBagSheetScope =
       tripDayId: string;
       events: { id: string; title: string }[];
       isPremium: boolean;
+      aiJobStatus?: 'idle' | 'loading' | 'complete';
     }
   | {
       kind: 'event';
@@ -29,7 +30,7 @@ export type InTheBagSheetScope =
       eventId: string;
       eventTitle: string;
       isPremium: boolean;
-      aiJobStatus: 'idle' | 'loading' | 'complete';
+      aiJobStatus?: 'idle' | 'loading' | 'complete';
     };
 
 interface Props {
@@ -104,6 +105,7 @@ export function InTheBagSheet({ scope, isOpen, onClose, onUpgradePress }: Props)
             events={scope.events}
             isPremium={scope.isPremium}
             onUpgradePress={onUpgradePress}
+            aiJobStatus={scope.aiJobStatus ?? 'idle'}
           />
         )}
         {scope.kind === 'event' && (
@@ -112,8 +114,8 @@ export function InTheBagSheet({ scope, isOpen, onClose, onUpgradePress }: Props)
             eventId={scope.eventId}
             eventTitle={scope.eventTitle}
             isPremium={scope.isPremium}
-            aiJobStatus={scope.aiJobStatus}
             onUpgradePress={onUpgradePress}
+            aiJobStatus={scope.aiJobStatus ?? 'idle'}
           />
         )}
       </BottomSheetScrollView>

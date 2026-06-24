@@ -36,7 +36,7 @@ export function TripSummary({ trip, userId, isReadOnly = false }: Props) {
     kind: 'trip',
     tripId: trip.id,
     isPremium,
-    aiJobStatus: bagLoading ? 'processing' : 'idle',
+    aiJobStatus: bagLoading ? 'loading' : 'idle',
   };
 
   return (
