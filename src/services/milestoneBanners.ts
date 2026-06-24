@@ -19,6 +19,17 @@ export async function getVisibleBanners(tripId: string, userId: string): Promise
   });
 }
 
+export async function getDismissedBannerKeys(tripId: string, userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('milestone_banner_states')
+    .select('banner_key')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .not('dismissed_at', 'is', null);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.banner_key);
+}
+
 export async function dismissBanner(
   tripId: string,
   userId: string,

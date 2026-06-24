@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { parseISO } from 'date-fns';
 import { MilestoneBannerState } from '../../types/database';
 import { MilestoneBanner } from './MilestoneBanner';
-import { getVisibleBanners, dismissBanner, snoozeBanner } from '../../services/milestoneBanners';
+import { getVisibleBanners, getDismissedBannerKeys, dismissBanner, snoozeBanner } from '../../services/milestoneBanners';
 
 const BANNER_WINDOWS: Record<MilestoneBannerState['banner_key'], number> = {
   insurance_30d: 30,
@@ -33,16 +33,15 @@ export function MilestoneBannerList({ tripId, userId, tripStartDate }: Props) {
 
     if (windowActive.length === 0) { setVisibleBanners([]); return; }
 
-    const dbVisible = await getVisibleBanners(tripId, userId);
-    const dbKeys = new Set(dbVisible.map((b) => b.banner_key));
+    const [dbVisible, dismissedKeys] = await Promise.all([
+      getVisibleBanners(tripId, userId),
+      getDismissedBannerKeys(tripId, userId),
+    ]);
+    const visibleKeys = new Set(dbVisible.map((b) => b.banner_key));
+    const dismissedSet = new Set(dismissedKeys);
 
-    // Show banners that are window-active AND either: have a DB record (not dismissed/snoozed) OR have no record yet (never shown)
-    const allDbKeys = new Set(dbVisible.map((b) => b.banner_key));
-    const toShow = windowActive.filter((key) => {
-      if (dbKeys.has(key)) return true; // in DB and passed visibility filter
-      if (!allDbKeys.has(key)) return true; // never interacted with
-      return false; // in DB but filtered out (dismissed/snoozed)
-    });
+    // Show: window-active banners that are visible in DB, OR have no DB record at all (never interacted with)
+    const toShow = windowActive.filter((key) => visibleKeys.has(key) || !dismissedSet.has(key));
 
     setVisibleBanners(toShow);
   }, [tripId, userId, tripStartDate]);
@@ -50,16 +49,28 @@ export function MilestoneBannerList({ tripId, userId, tripStartDate }: Props) {
   useEffect(() => { refresh(); }, [refresh]);
 
   async function handleConfirm(key: MilestoneBannerState['banner_key']) {
-    await dismissBanner(tripId, userId, key, 'confirm');
-    refresh();
+    try {
+      await dismissBanner(tripId, userId, key, 'confirm');
+      await refresh();
+    } catch (e) {
+      Alert.alert('Error', 'Could not confirm banner. Please try again.');
+    }
   }
   async function handleDismiss(key: MilestoneBannerState['banner_key']) {
-    await dismissBanner(tripId, userId, key, 'dismiss');
-    refresh();
+    try {
+      await dismissBanner(tripId, userId, key, 'dismiss');
+      await refresh();
+    } catch (e) {
+      Alert.alert('Error', 'Could not dismiss banner. Please try again.');
+    }
   }
   async function handleSnooze(key: MilestoneBannerState['banner_key']) {
-    await snoozeBanner(tripId, userId, key);
-    refresh();
+    try {
+      await snoozeBanner(tripId, userId, key);
+      await refresh();
+    } catch (e) {
+      Alert.alert('Error', 'Could not snooze banner. Please try again.');
+    }
   }
 
   if (visibleBanners.length === 0) return null;

@@ -17,7 +17,7 @@ export function CoverPhotoHeader({ trip }: Props) {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'trips', filter: `id=eq.${trip.id}` },
         (payload) => {
           const newUrl = (payload.new as Partial<Trip>).cover_photo_url;
-          if (newUrl) setCoverUrl(newUrl);
+          if (newUrl !== undefined) setCoverUrl(newUrl ?? null);
         })
       .subscribe();
     return () => { supabase.removeChannel(channel); };

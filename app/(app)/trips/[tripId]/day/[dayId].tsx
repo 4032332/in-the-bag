@@ -17,6 +17,11 @@ interface DayViewProps {
 export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: DayViewProps) {
   const savedStyle = (storage.getString(`trip_display_style_${tripId}`) as 'tiles' | 'stacked') ?? 'tiles';
   const [displayStyle, setDisplayStyle] = useState<'tiles' | 'stacked'>(savedStyle);
+
+  useEffect(() => {
+    const saved = storage.getString(`trip_display_style_${tripId}`) as 'tiles' | 'stacked' | undefined;
+    setDisplayStyle(saved ?? 'tiles');
+  }, [tripId]);
   const [events, setEvents] = useState<Event[]>([]);
 
   const loadEvents = useCallback(async () => {
@@ -47,6 +52,7 @@ export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: D
 
 export default function DayScreen() {
   const { tripId, dayId } = useLocalSearchParams<{ tripId: string; dayId: string }>();
+  if (!tripId || !dayId) return null;
   return <DayView tripDayId={dayId} tripId={tripId} />;
 }
 
