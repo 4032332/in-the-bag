@@ -112,10 +112,11 @@ export function AddTransportInlineSheet({
       animationType="slide"
       presentationStyle="formSheet"
       onRequestClose={onClose}
+      onDismiss={resetForm}
     >
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity onPress={() => { resetForm(); onClose(); }}>
             <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add transport</Text>

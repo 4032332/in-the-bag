@@ -58,12 +58,16 @@ export function AddToDaySheet({
     formState: { errors, isSubmitting },
   } = useForm<Record<string, string>>();
 
+  function resetState() {
+    setStep('loading');
+    setCategory(null);
+    setSubcategory(null);
+    reset();
+  }
+
   useEffect(() => {
     if (!visible) {
-      setStep('loading');
-      setCategory(null);
-      setSubcategory(null);
-      reset();
+      resetState();
       return;
     }
     countEventsForDay(tripDayId).then((count) => {
@@ -176,6 +180,7 @@ export function AddToDaySheet({
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={onClose}
+      onDismiss={resetState}
     >
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
@@ -207,7 +212,11 @@ export function AddToDaySheet({
           )}
         </View>
 
-        {step === 'loading' ? null : null}
+        {step === 'loading' && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" />
+          </View>
+        )}
 
         {step === 'upgrade_prompt' ? (
           <View style={styles.upgradeContainer}>
@@ -294,4 +303,5 @@ const styles = StyleSheet.create({
   laterBtn: { padding: 12 },
   laterBtnText: { color: '#888', fontSize: 15 },
   detailContent: { padding: 20 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
