@@ -26,10 +26,11 @@ export async function dismissBanner(
   actionTaken: 'confirm' | 'dismiss' | 'save_now'
 ): Promise<void> {
   const now = new Date().toISOString();
-  await supabase.from('milestone_banner_states').upsert(
+  const { error } = await supabase.from('milestone_banner_states').upsert(
     { trip_id: tripId, user_id: userId, banner_key: bannerKey, dismissed_at: now, action_taken: actionTaken },
     { onConflict: 'trip_id,user_id,banner_key' }
   );
+  if (error) throw error;
 }
 
 export async function snoozeBanner(
@@ -38,8 +39,9 @@ export async function snoozeBanner(
   bannerKey: MilestoneBannerState['banner_key']
 ): Promise<void> {
   const resurface = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  await supabase.from('milestone_banner_states').upsert(
+  const { error } = await supabase.from('milestone_banner_states').upsert(
     { trip_id: tripId, user_id: userId, banner_key: bannerKey, resurface_at: resurface },
     { onConflict: 'trip_id,user_id,banner_key' }
   );
+  if (error) throw error;
 }

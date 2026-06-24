@@ -10,7 +10,7 @@ export function generateTripDays(tripId: string, startDate: string, endDate: str
   }));
 }
 
-export function formatDayTabLabel(day: TripDay, dateFormat?: string): [string, string, string] {
+export function formatDayTabLabel(day: TripDay): [string, string, string] {
   const parsed = parseISO(day.date);
   const weekday = format(parsed, 'EEE').toUpperCase();
   const dayMonth = `${parsed.getDate()}/${parsed.getMonth() + 1}`;
