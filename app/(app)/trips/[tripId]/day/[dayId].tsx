@@ -45,7 +45,7 @@ export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: D
           </TouchableOpacity>
         )}
       </View>
-      <EventList events={events} displayStyle={displayStyle} tripId={tripId} />
+      <EventList events={events} displayStyle={displayStyle} tripId={tripId} tripDayId={tripDayId} isReadOnly={isReadOnly} />
     </View>
   );
 }

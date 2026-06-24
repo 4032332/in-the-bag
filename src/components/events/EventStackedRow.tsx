@@ -21,9 +21,11 @@ const CATEGORY_COLORS: Record<string, string> = {
 interface Props {
   event: Event;
   tripId: string;
+  tripDayId: string;
+  isReadOnly?: boolean;
 }
 
-export function EventStackedRow({ event, tripId }: Props) {
+export function EventStackedRow({ event, tripId, tripDayId, isReadOnly = false }: Props) {
   const router = useRouter();
   const startTime = event.start_time ? format(parseISO(event.start_time), 'HH:mm') : null;
   const endTime = event.end_time ? format(parseISO(event.end_time), 'HH:mm') : null;
@@ -32,7 +34,11 @@ export function EventStackedRow({ event, tripId }: Props) {
   return (
     <TouchableOpacity
       style={styles.row}
-      onPress={() => router.push(`/trips/${tripId}/events/${event.id}` as any)}
+      onPress={() =>
+        router.push(
+          `/(app)/trips/${tripId}/events/${event.id}?tripDayId=${tripDayId}&readOnly=${isReadOnly}` as any,
+        )
+      }
       accessibilityRole="button"
     >
       <View style={[styles.strip, { backgroundColor: CATEGORY_COLORS[event.category] ?? '#999' }]} />

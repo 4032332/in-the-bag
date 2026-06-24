@@ -8,9 +8,11 @@ interface Props {
   events: Event[];
   displayStyle: 'tiles' | 'stacked';
   tripId: string;
+  tripDayId: string;
+  isReadOnly?: boolean;
 }
 
-export function EventList({ events, displayStyle, tripId }: Props) {
+export function EventList({ events, displayStyle, tripId, tripDayId, isReadOnly = false }: Props) {
   if (events.length === 0) {
     return (
       <View style={styles.empty}>
@@ -24,8 +26,8 @@ export function EventList({ events, displayStyle, tripId }: Props) {
       keyExtractor={(e) => e.id}
       renderItem={({ item }) =>
         displayStyle === 'tiles'
-          ? <EventTile event={item} tripId={tripId} />
-          : <EventStackedRow event={item} tripId={tripId} />
+          ? <EventTile event={item} tripId={tripId} tripDayId={tripDayId} isReadOnly={isReadOnly} />
+          : <EventStackedRow event={item} tripId={tripId} tripDayId={tripDayId} isReadOnly={isReadOnly} />
       }
       contentContainerStyle={styles.list}
     />

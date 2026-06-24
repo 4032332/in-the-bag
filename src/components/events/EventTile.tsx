@@ -21,16 +21,22 @@ const CATEGORY_LABELS: Record<string, string> = {
 interface Props {
   event: Event;
   tripId: string;
+  tripDayId: string;
+  isReadOnly?: boolean;
 }
 
-export function EventTile({ event, tripId }: Props) {
+export function EventTile({ event, tripId, tripDayId, isReadOnly = false }: Props) {
   const router = useRouter();
   const timeLabel = event.start_time ? format(parseISO(event.start_time), 'HH:mm') : null;
 
   return (
     <TouchableOpacity
       style={styles.tile}
-      onPress={() => router.push(`/trips/${tripId}/events/${event.id}` as any)}
+      onPress={() =>
+        router.push(
+          `/(app)/trips/${tripId}/events/${event.id}?tripDayId=${tripDayId}&readOnly=${isReadOnly}` as any,
+        )
+      }
       accessibilityRole="button"
       accessibilityLabel={`Open event ${event.title}`}
     >
