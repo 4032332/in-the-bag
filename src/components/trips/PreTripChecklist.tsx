@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Modal, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Modal, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { TripTask } from '../../types/database';
 import { listMyTasks, addManualTask, toggleTaskComplete } from '../../services/tasks';
 
 interface Props {
   tripId: string;
+  isLoading?: boolean;
 }
 
-export function PreTripChecklist({ tripId }: Props) {
+export function PreTripChecklist({ tripId, isLoading = false }: Props) {
   const [tasks, setTasks] = useState<TripTask[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -60,6 +61,14 @@ export function PreTripChecklist({ tripId }: Props) {
         <Text style={styles.addBtnText}>+ Add task</Text>
       </TouchableOpacity>
 
+      {/* AI Suggested Tasks Placeholder */}
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color="#007AFF" />
+          <Text style={styles.loadingText}>Generating personalized tasks...</Text>
+        </View>
+      )}
+
       <Modal visible={showAddModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -103,4 +112,6 @@ const styles = StyleSheet.create({
   cancelBtnText: { fontSize: 15, color: '#555' },
   saveBtn: { flex: 1, padding: 14, borderRadius: 8, backgroundColor: '#007AFF', alignItems: 'center' },
   saveBtnText: { fontSize: 15, color: '#fff', fontWeight: '600' },
+  loadingContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 16, padding: 12, backgroundColor: '#f9f9f9', borderRadius: 8, gap: 8 },
+  loadingText: { color: '#666', fontSize: 14, fontStyle: 'italic' },
 });

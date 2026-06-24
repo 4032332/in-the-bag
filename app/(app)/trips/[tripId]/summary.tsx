@@ -8,6 +8,7 @@ import { storage } from '../../../../src/lib/mmkv';
 import { useDemoMode } from '../../../../src/hooks/useDemoMode';
 import { BackpackFAB } from '../../../../src/components/in-the-bag/BackpackFAB';
 import { InTheBagSheet, InTheBagSheetScope } from '../../../../src/components/in-the-bag/InTheBagSheet';
+import { useAsyncJob } from '../../../hooks/useAsyncJob';
 
 interface Props {
   trip: Trip & { trip_destinations: TripDestination[]; trip_participants: TripParticipant[] };
@@ -20,6 +21,14 @@ export function TripSummary({ trip, userId, isReadOnly = false }: Props) {
   const isPremium = demoTier === 'premium';
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  const coverJobId = storage.getString(`job_cover_photo_${trip.id}`);
+  const checklistJobId = storage.getString(`job_checklist_${trip.id}`);
+  const bagJobId = storage.getString(`job_bag_${trip.id}`);
+
+  const { isLoading: coverLoading } = useAsyncJob(coverJobId ?? null);
+  const { isLoading: checklistLoading } = useAsyncJob(checklistJobId ?? null);
+  const { isLoading: bagLoading } = useAsyncJob(bagJobId ?? null);
+
   const tripStartDate = trip.trip_destinations.sort((a, b) => a.display_order - b.display_order)[0]?.start_date ?? new Date().toISOString().split('T')[0];
   const offlineSaved = storage.getBoolean(`offline_save_done_${trip.id}`) ?? false;
 
@@ -27,13 +36,13 @@ export function TripSummary({ trip, userId, isReadOnly = false }: Props) {
     kind: 'trip',
     tripId: trip.id,
     isPremium,
-    aiJobStatus: 'idle',
+    aiJobStatus: bagLoading ? 'processing' : 'idle',
   };
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer} contentContainerStyle={styles.content}>
-        <CoverPhotoHeader trip={trip} />
+        <CoverPhotoHeader trip={trip} isLoading={coverLoading} />
         {!isReadOnly && (
           <MilestoneBannerList tripId={trip.id} userId={userId} tripStartDate={tripStartDate} />
         )}
@@ -42,7 +51,7 @@ export function TripSummary({ trip, userId, isReadOnly = false }: Props) {
             <Text style={styles.offlineBannerText}>Documents saved for offline access</Text>
           </View>
         )}
-        <PreTripChecklist tripId={trip.id} />
+        <PreTripChecklist tripId={trip.id} isLoading={checklistLoading} />
       </ScrollView>
       <BackpackFAB
         onPress={() => setSheetOpen(true)}
