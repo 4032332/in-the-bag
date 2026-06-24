@@ -69,7 +69,7 @@ export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: D
           tripDayId,
           events: events.map((e) => ({ id: e.id, title: e.title ?? '' })),
           isPremium,
-          aiJobStatus: aiLoading ? 'processing' : 'idle',
+          aiJobStatus: aiLoading ? 'loading' : 'idle',
         }}
         isOpen={sheetOpen}
         onClose={() => setSheetOpen(false)}

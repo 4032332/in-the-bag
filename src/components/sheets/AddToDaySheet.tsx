@@ -14,13 +14,13 @@ import { useForm } from 'react-hook-form';
 import { EventCategory } from '../../types/database';
 import { countEventsForDay, createEvent } from '../../services/events';
 import { isDayAtCap } from '../../lib/freeTierCap';
-import { queueJob } from '../../app/lib/jobs/queue';
+import { queueJob } from '../../../app/lib/jobs/queue';
 import { getEventFields } from '../../lib/eventFieldConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { CategoryPicker } from '../events/CategoryPicker';
 import { SubcategoryPicker, hasSubcategories } from '../events/SubcategoryPicker';
 import { EventDetailFields } from '../events/EventDetailFields';
-import { useAsyncJob } from '../../app/hooks/useAsyncJob';
+import { useAsyncJob } from '../../../app/hooks/useAsyncJob';
 
 type SheetStep = 'loading' | 'category' | 'subcategory' | 'detail' | 'upgrade_prompt';
 
