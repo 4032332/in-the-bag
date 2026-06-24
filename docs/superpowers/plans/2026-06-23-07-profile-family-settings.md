@@ -326,7 +326,18 @@ constants/
     }
   }
 
-  /** Resend an existing pending/expired invitation by id (creates a fresh row). */
+  /**
+   * Resend an existing pending/expired invitation by id.
+   *
+   * RACE CONDITION NOTE: The naive approach of (1) send new invitation, then (2) delete old one
+   * creates a window where two valid pending invitations exist for the same email+group. If the
+   * invitee clicks the original link during that window, both could be accepted.
+   *
+   * Chosen approach: cancel (delete) the old row FIRST, then create the new one. This ensures
+   * only one valid invitation exists at any point. The small window where no invitation exists
+   * (between delete and insert) is acceptable — the invitee simply cannot accept during that
+   * ~100 ms gap, which is harmless.
+   */
   export async function resendInvitation(invitationId: string): Promise<void> {
     const { data: inv, error } = await supabase
       .from('family_invitations')
@@ -335,16 +346,21 @@ constants/
       .single()
 
     if (error || !inv) throw new Error('Invitation not found')
-    await sendInvitation({ invitee_email: inv.invitee_email, family_role: inv.family_role })
-    // Cancel the old one
+    // Cancel old row FIRST to avoid duplicate-invitation race condition
     await cancelInvitation(invitationId)
+    // Then create the new invitation (fresh token + expiry)
+    await sendInvitation({ invitee_email: inv.invitee_email, family_role: inv.family_role })
   }
 
-  /** Cancel a pending invitation. */
+  /**
+   * Cancel a pending invitation (inviter cancelling their own sent invite).
+   * Deletes the row entirely — does NOT set status to 'declined'.
+   * 'declined' is reserved for the invitee refusing; the inviter cancelling should leave no trace.
+   */
   export async function cancelInvitation(invitationId: string): Promise<void> {
     const { error } = await supabase
       .from('family_invitations')
-      .update({ status: 'declined' })
+      .delete()
       .eq('id', invitationId)
 
     if (error) throw new Error(error.message)
@@ -386,6 +402,19 @@ constants/
       .from('family_invitations')
       .update({ status: 'accepted', responded_at: new Date().toISOString() })
       .eq('id', invitation.id)
+
+    // Notify the inviter that their invitation was accepted.
+    // Fetch the invitee's display name for the notification payload, then call
+    // sendFamilyAcceptedNotification(inviteeName) — defined in Plan 9 — which
+    // delivers a push notification to the inviter via Supabase Realtime or direct
+    // push. Reference Plan 9 for the full implementation of that function.
+    const { data: inviteUser } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+    const inviteeName = inviteUser?.full_name ?? invitee_email
+    // TODO (Plan 9): await sendFamilyAcceptedNotification({ inviterUserId: invitation.inviter_user_id, inviteeName })
 
     return { groupId: invitation.family_group_id }
   }
@@ -737,23 +766,28 @@ constants/
           .select('id, full_name, profile_photo_url, family_role')
           .eq('managed_by_user_id', currentUserId)
 
-        // Deduplicate by user_id
-        const seen = new Set<string>()
-        const linked: FamilyMember[] = []
+        // Deduplicate by user_id — accumulate ALL group_ids the user belongs to.
+        // This is critical for the remove-member flow so we know which groups to target.
+        const seen = new Map<string, FamilyMember>()
         for (const m of allMembers ?? []) {
-          if (!m.user_id || seen.has(m.user_id)) continue
-          seen.add(m.user_id)
-          const u = m.users as any
-          linked.push({
-            user_id: m.user_id,
-            guest_profile_id: null,
-            full_name: u?.full_name ?? 'Unknown',
-            profile_photo_url: u?.profile_photo_url ?? null,
-            family_role: u?.family_role ?? null,
-            is_guest: false,
-            group_ids: [m.family_group_id],
-          })
+          if (!m.user_id) continue
+          if (seen.has(m.user_id)) {
+            // User already recorded — accumulate the additional group_id
+            seen.get(m.user_id)!.group_ids.push(m.family_group_id)
+          } else {
+            const u = m.users as any
+            seen.set(m.user_id, {
+              user_id: m.user_id,
+              guest_profile_id: null,
+              full_name: u?.full_name ?? 'Unknown',
+              profile_photo_url: u?.profile_photo_url ?? null,
+              family_role: u?.family_role ?? null,
+              is_guest: false,
+              group_ids: [m.family_group_id],
+            })
+          }
         }
+        const linked: FamilyMember[] = Array.from(seen.values())
 
         const guestMembers: FamilyMember[] = (guests ?? []).map((g) => ({
           user_id: null,
@@ -841,9 +875,13 @@ constants/
   - Resend is available for both `pending` and `expired` status rows
 
 - [ ] 7.6 Create `components/profile/GuestProfileSheet.tsx` (bottom sheet):
-  - All fields identical to My Details personal/medical sections, minus email/contact fields (guests have no account)
-  - On save: upsert `guest_profiles` row with `managed_by_user_id = currentUserId`
-  - Profile photo upload uses `ProfilePhotoUploader` with `userId` set to `managed_by_user_id` but stored under `guest-photos/` prefix
+  - Fields must match **only** the columns that exist in the `guest_profiles` table (spec Section 6):
+    `full_name`, `date_of_birth`, `profile_photo_url`, `family_role`, `disability_accessibility_needs`,
+    `medical_conditions`, `medications`, `food_allergies`, `dietary_requirements`.
+  - Do NOT include address, country_of_residency, citizenship_countries, or passport_expiry — these
+    columns do not exist on `guest_profiles` and must not be saved or displayed here.
+  - On save: upsert `guest_profiles` row with `managed_by_user_id = currentUserId` using only the fields above.
+  - Profile photo upload uses `ProfilePhotoUploader` with `userId` set to `managed_by_user_id` but stored under `guest-photos/` prefix.
 
 - [ ] 7.7 Write tests:
   - `useFamilyMembers`: mock Supabase, assert deduplication — user who appears in two groups appears once
@@ -1005,7 +1043,17 @@ constants/
       body: JSON.stringify({ user_id: user.id }),
     })
 
-    // Delete Supabase auth user (cascades to all user data via ON DELETE CASCADE)
+    // Delete Supabase auth user (cascades to all user data via ON DELETE CASCADE).
+    // IMPORTANT — CASCADE dependency: this RPC relies on ON DELETE CASCADE foreign keys
+    // being correctly defined in the Plan 1 schema migration. Before implementing, verify
+    // that the Plan 1 migration includes CASCADE on ALL FK relationships from users.id:
+    //   • trip_participants (via user_id → users.id)
+    //   • family_group_members (user_id → users.id)
+    //   • guest_profiles (managed_by_user_id → users.id)
+    //   • subscriptions (user_id → users.id)
+    //   • async_jobs (user_id → users.id)
+    // If any CASCADE definitions are missing from Plan 1, add a migration patch here
+    // in Task 10 before this RPC is called.
     const { error } = await supabase.rpc('delete_current_user')
     if (error) throw new Error(error.message)
 
@@ -1040,7 +1088,7 @@ constants/
   - Manage Subscription: `Linking.openURL('https://apps.apple.com/account/subscriptions')` — links to App Store
   - Restore Purchase: calls `Purchases.restorePurchases()` (RevenueCat)
   - Change Email: taps → shows a `Modal` with a `TextInput` for new email + "Send Verification" button → calls `supabase.auth.updateUser({ email: newEmail })` → shows "Check your inbox to confirm the new email address"
-  - Change Password: taps → shows `Modal` with current password + new password fields → calls `supabase.auth.updateUser({ password: newPassword })`
+  - Change Password: before rendering this option, check `session.user.app_metadata.providers` (or the `identities` array on the user object). If the user signed in exclusively via Apple or Google (i.e., no `email` provider present), replace the "Change Password" row with a read-only label "Password managed by Apple / Google" and do NOT render the password modal or call `supabase.auth.updateUser({ password })`. Only show the full Change Password modal when an email/password identity exists.
   - Sign Out: calls `supabase.auth.signOut()` → navigates to auth root
   - Delete Account: taps → shows an `Alert` with a `TextInput` prompt requiring the user to type `DELETE` (exact, case-sensitive); if confirmation does not match, "Delete Account" button stays disabled; once confirmed, calls `deleteAccount()` from `lib/deleteAccount.ts`; navigates to auth root on success
 
@@ -1087,3 +1135,19 @@ constants/
 - RevenueCat SDK installed (`react-native-purchases`); paywall integration is a stub in this plan — full paywall UI is out of scope here.
 - The Trip Screen (Plan 2) accepts a `readOnly` URL param; if not yet implemented, add a minimal read-only guard.
 - Deep link scheme `inthebag` registered in `app.json` and associated domain configured for Universal Links if targeting iOS 13+ (out of scope for this plan — custom scheme sufficient for MVP).
+
+---
+
+## Review Fixes Applied
+
+The following targeted fixes were applied to this plan on 2026-06-24:
+
+| ID | Location | Fix summary |
+|----|----------|-------------|
+| **C1** | `cancelInvitation` in `lib/invitations.ts` | Changed from `.update({ status: 'declined' })` to `.delete()`. The inviter cancelling their sent invite should remove the row entirely; 'declined' is reserved for the invitee refusing. |
+| **C2** | `useFamilyMembers` deduplication loop | Replaced `Set`-based skip with a `Map` that accumulates all `group_ids` for a user seen in multiple groups. Required for the remove-member flow to target the correct group. |
+| **C4** | `GuestProfileSheet` step (Task 7.6) | Restricted the field list to only those columns that exist in the `guest_profiles` table per spec Section 6. Removed address, country_of_residency, citizenship_countries, and passport_expiry. |
+| **C5** | `acceptInvitationByToken` in `lib/invitations.ts` | Added a push notification trigger step after marking the invitation accepted, referencing Plan 9's `sendFamilyAcceptedNotification(inviteeName)` function. |
+| **C6** | `deleteAccount` / `delete_current_user` RPC (Task 10.2) | Added an explicit note documenting the CASCADE dependency on Plan 1 FK definitions, listing all five tables that must CASCADE from `users.id`. |
+| **M6** | Change Password in `AccountSection` (Task 10.3) | Added a provider guard: check `app_metadata.providers` / `identities`; replace the Change Password button with a static label for Apple/Google-only users. |
+| **M3** | `resendInvitation` in `lib/invitations.ts` | Reordered to cancel (delete) the old invitation row FIRST, then create the new one, eliminating the window where two valid invitations could coexist. Added a race-condition explanation comment. |

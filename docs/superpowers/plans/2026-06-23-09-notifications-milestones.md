@@ -148,10 +148,13 @@ src/
 ### Step 5 — Offline document download function
 
 - [ ] Create `src/features/offline/offlineDocumentDownload.ts`:
+
+  > **Schema note (C1 & C2):** The `event_documents` table must include a `tab_source` field to distinguish Tickets tab entries from Documents tab entries. If this field does not exist in the Plan 1 schema, add a `tab_source` column with values `'tickets' | 'documents'` to `event_documents` as a migration in this plan.
+
   - Export `offlineDocumentDownload(tripId: string, userId: string): Promise<OfflineSaveResult>`:
     1. Query events for the trip:
-       - **Visa/immigration docs**: `event_documents` rows where `event.trip_id = tripId` AND `event.category = 'Transport'` AND `event.subcategory = 'Air'` AND the event is flagged international (derived from presence of visa/immigration document label — use label contains 'visa' or 'immigration', case-insensitive) → download all associated `event_documents.storage_url` files
-       - **Boarding passes**: `event_documents` rows where `event.trip_id = tripId` AND `event.category = 'Transport'` AND `event.subcategory = 'Air'` AND `event_documents.type IN ('scan', 'qr')` (tickets tab files)
+       - **Visa/immigration docs**: `event_documents` rows where `event.trip_id = tripId` AND `event.category = 'Transport'` AND `event.subcategory = 'Air'` AND `tab_source = 'documents'`. This broader approach (all Documents-tab files from Transport-Air events) covers visa/immigration docs without fragile label matching and matches spec intent — the 'international' flag can be derived from the `is_international` boolean field on the events table if finer filtering is needed later, but including all Documents-tab files is simpler and safer.
+       - **Boarding passes**: `event_documents` rows where `event.trip_id = tripId` AND `event.category = 'Transport'` AND `event.subcategory = 'Air'` AND `tab_source = 'tickets'`. Note: `tab_source` must be used here — a filter of `type IN ('scan', 'qr')` alone would match scanned documents in BOTH the Tickets tab AND the Documents tab, incorrectly including non-boarding-pass scanned docs.
        - **Airport transport confirmations**: `event_documents` rows where `event.trip_id = tripId` AND `event.category = 'Transport'` AND `event.trip_day_id` corresponds to the first or last day of the trip (join `trip_days` on `day_number = 1` or `day_number = max(day_number)` for this trip)
        - **Hotel confirmation**: `event_documents` rows where `event.trip_id = tripId` AND `event.category = 'Accommodation'`
     2. For each qualifying `storage_url`, download to device file system via `expo-file-system` (`FileSystem.downloadAsync`) into `FileSystem.documentDirectory + 'offline/' + tripId + '/'`
@@ -160,8 +163,10 @@ src/
     5. Return `{ success: boolean; savedCount: number; errors: string[] }`
 
 - [ ] Unit tests `src/__tests__/milestones/offlineDocumentDownload.test.ts`:
-  - Transport-Air event with visa doc label → included in download set
-  - Transport-Air event with boarding pass (type=scan) → included
+  - Transport-Air event with a Documents-tab file (`tab_source = 'documents'`) → included in visa/immigration download set
+  - Transport-Air event with a Documents-tab scanned visa doc (`type = 'scan'`, `tab_source = 'documents'`) → included in visa/immigration set AND NOT included in boarding pass set (C1/C2: tab_source distinguishes the two sets)
+  - Transport-Air event with boarding pass (`tab_source = 'tickets'`) → included in boarding pass set
+  - Transport-Air event with a Tickets-tab file (`tab_source = 'tickets'`, type=scan) → included in boarding passes; NOT included in visa/immigration set
   - Transport event on day 1 → included; Transport event on day 3 of 5-day trip → excluded
   - Transport event on last day (day 5) → included
   - Accommodation event documents → included
@@ -206,7 +211,7 @@ src/
   - `insurance_30d`: `resurface_at` in past → shown
   - `visa_14d`: no row → shown (within 14-day window)
   - `visa_14d`: `dismissed_at` set → hidden
-  - `visa_14d`: `resurface_at` set to past (should never happen, but) → still hidden because `dismissed_at` check is the sole gate; verify `resurface_at` is irrelevant for this key
+  - `visa_14d`: `resurface_at` set to a past date, `dismissed_at IS NULL` → **SHOWN** (not hidden); `resurface_at` is intentionally ignored for `visa_14d` — the sole display gate is `dismissed_at IS NULL`; this test confirms `resurface_at` has no effect on this banner key
   - `esim_7d`, `offline_docs_7d`, `wifi_day_of`: same snooze/dismiss rules as `insurance_30d`
   - Snooze writes `resurface_at = now + 24h`; `dismissed_at` remains NULL
   - Confirm writes `dismissed_at = now()`, `action_taken = 'confirm'`
@@ -284,6 +289,8 @@ src/
 
 - [ ] In the Create Trip flow (after trip saved to Supabase), call `scheduleTripNotifications({ id: trip.id, name: trip.name, departureDateISO: trip.departure_date })`
 
+- [ ] **Edit Trip departure date (M1):** If the trip's departure date is edited after creation, the app must cancel existing notifications and re-schedule them with the new date. Wire into the Edit Trip save flow: call `cancelTripNotifications(tripId)` then `scheduleTripNotifications(...)` with the updated departure date. This is a gap in the current plan — handle it here in the Edit Trip save flow or flag it explicitly for Plan 2's Edit Trip flow. Do not leave it unhandled.
+
 - [ ] On app launch (root layout `useEffect`), iterate all active/upcoming trips from local MMKV cache; for each trip that has no notification IDs stored (`trip_notif_ids_<tripId>` missing or empty), call `scheduleTripNotifications` — handles the case where permissions were denied at create time and later granted
 
 - [ ] On trip deletion, call `cancelTripNotifications(tripId)` and delete `offline_save_done_<tripId>` and `offline_docs_<tripId>` from MMKV
@@ -296,7 +303,7 @@ src/
 
 - [ ] Manual smoke test checklist (Expo Go / Xcode Simulator):
   - [ ] Create a trip 8 days in future → verify `esim_7d`, `offline_docs_7d`, `wifi_day_of` notifications scheduled; `insurance_30d` and `visa_14d` skipped (in the past)
-  - [ ] Open Summary tab → `esim_7d` and `offline_docs_7d` banners both appear
+  - [ ] Open Summary tab → `esim_7d` and `offline_docs_7d` banners both appear; also verify `insurance_30d` banner IS STILL VISIBLE — even though its push notification was skipped (trigger date was in the past), the banner display window (within 30 days of departure) is still active at 8 days out. Push notification scheduling and in-app banner display are independent systems: the banner shows based on the current date vs departure date, not on whether the notification was ever sent (M2)
   - [ ] Tap "Remind Me Later" on `insurance_30d` → banner hides; reappears after 24h (`resurface_at` set)
   - [ ] Tap "Not applicable to me" on `visa_14d` → permanently hidden; no snooze available
   - [ ] Tap "Save Now" on `offline_docs_7d` → download starts; "Offline Documents" button appears on Summary tab after completion
@@ -315,3 +322,31 @@ src/
   - [ ] `offline_docs_7d` notification payload has `categoryIdentifier = OFFLINE_DOCS_CATEGORY` with Save Now / Later action buttons
 
 - [ ] Commit: `feat: notifications and milestones smoke test pass, plan complete`
+
+---
+
+## Review Fixes Applied
+
+The following targeted fixes were applied to this plan after initial review:
+
+**C1 — Boarding pass selection disambiguated (Step 5)**
+- Added schema note requiring a `tab_source` column (`'tickets' | 'documents'`) on `event_documents`, with a migration if not already present.
+- Updated boarding pass filter from `type IN ('scan', 'qr')` to `tab_source = 'tickets'` with an explanation of why the old filter was ambiguous (would have matched scanned docs in both tabs).
+- Added test case: Documents-tab scanned visa doc (`type=scan`, `tab_source='documents'`) must NOT appear in the boarding pass download set.
+
+**C2 — Visa/immigration doc selection uses tab_source, not label heuristic (Step 5)**
+- Replaced the fragile `label contains 'visa' or 'immigration'` heuristic with `tab_source = 'documents'` on Transport-Air events (broader approach, simpler, matches spec intent).
+- Noted that `is_international` on the events table could be used for finer filtering if needed later.
+- Updated tests to reflect the corrected selection logic using `tab_source`.
+
+**M4 — visa_14d test assertion corrected (Step 6)**
+- The test for `visa_14d` with `resurface_at` set to a past date previously said "still hidden" — this was wrong.
+- Fixed: a `visa_14d` row with `dismissed_at IS NULL` and any `resurface_at` value must show the banner, because `resurface_at` is intentionally irrelevant for this key. Test now asserts SHOWN, with a comment explaining why.
+
+**M1 — Edit Trip departure date must re-schedule notifications (Step 9)**
+- Added an explicit requirement: when the departure date is edited, call `cancelTripNotifications(tripId)` then `scheduleTripNotifications(...)` with the new date.
+- Flagged as a gap that must be handled in the Edit Trip save flow (this plan or Plan 2).
+
+**M2 — Smoke test must verify insurance_30d banner at 8 days out (Step 10)**
+- Updated the "8 days in future" smoke test scenario to also verify that the `insurance_30d` banner IS visible on the Summary tab, even though its push notification was skipped.
+- Added clarifying note: push notification scheduling and in-app banner display are independent systems.

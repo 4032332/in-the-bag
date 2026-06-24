@@ -51,13 +51,13 @@ src/
   - Test: antipodal points return approximately 20015 km.
 - [ ] Create `src/lib/stats/statsCalculator.ts` exporting the following pure functions (all accept typed arrays derived from Supabase query results — no direct DB calls inside these functions):
   - `totalTrips(trips: Trip[]): number`
-  - `totalDaysAway(trips: Trip[]): number` — sum of (end_date − start_date + 1) per trip using `trip_destinations` date ranges.
+  - `totalDaysAway(tripDateRanges: Array<{ minStart: Date; maxEnd: Date }>): number` — accepts trip-level min/max dates (i.e. `MIN(start_date)` to `MAX(end_date)` across each trip's destinations) and sums (maxEnd − minStart + 1) per trip. **Do not sum individual destination rows** — for multi-destination trips where destination date ranges overlap, summing each row will double-count days. The caller (`useStatsData`) must derive trip-level min/max dates via `MIN(start_date)` / `MAX(end_date)` grouped by trip before passing them to this function.
   - `countriesVisited(destinations: TripDestination[]): { count: number; list: string[] }` — deduplicated, sorted alphabetically.
   - `citiesVisited(destinations: TripDestination[]): { count: number; list: string[] }` — deduplicated `city, country` strings, sorted alphabetically.
   - `totalFlights(events: Event[]): number` — count events where `category = 'Transport'` and `subcategory = 'Air'`.
   - `totalCruises(trips: Trip[]): number` — count trips where `is_cruise = true`.
   - `totalTrainJourneys(events: Event[]): number` — count events where `category = 'Transport'` and `subcategory = 'Rail'`.
-  - `totalRoadTrips(events: Event[]): number` — count events where `category = 'Transport'` and `subcategory = 'Road'` AND `subcategory_detail` is one of `['car_hire', 'self_drive']`; explicitly **exclude** `taxi`, `shuttle`, and `bus`.
+  - `totalRoadTrips(events: Event[]): number` — count events where `category = 'Transport'` and `subcategory = 'Road'` AND `subcategory_detail` is one of `['car_hire', 'self_drive']`; explicitly **exclude** `taxi`, `shuttle`, and `bus`. **IMPORTANT: Before implementing, confirm the actual column name used to distinguish car_hire/self_drive from taxi/shuttle/bus within Transport — Road events. The spec Section 14 lists these as subcategory options under Transport — Road. Verify whether the distinction is stored in `subcategory` itself (e.g. `subcategory = 'car_hire'`) or in a separate `subcategory_detail` field. If it is `subcategory`, update the filter accordingly.**
   - `longestTrip(trips: Trip[], destinations: TripDestination[]): { tripName: string; days: number } | null`
   - `mostVisitedCountry(destinations: TripDestination[]): string | null` — country appearing in most trips (not most destination rows); returns first alphabetically on tie.
   - `mostCommonTravelCompanion(participants: TripParticipant[], currentUserId: string): { userId: string; count: number } | null` — count co-occurrence of each other user_id across trips; exclude the current user; return the user_id appearing in the most trips; on tie, return the user_id that is lexicographically smallest (deterministic).
@@ -67,6 +67,11 @@ src/
   - Test `countriesVisited` deduplication (same country on multiple trips counts once).
   - Test `longestTrip` returns correct trip when multiple trips have different lengths.
   - Test `totalDaysAway` correctly sums across multiple trips including single-day trips.
+  - [ ] Test `totalFlights`: fixture contains Air, Road, and Rail transport events; assert that only the Air events are counted and the total matches the Air-only count.
+  - [ ] Test `totalCruises`: fixture contains trips where `is_cruise` is `true` and `false`; assert that only trips with `is_cruise = true` are counted.
+  - [ ] Test `totalTrainJourneys`: fixture contains Rail and non-Rail transport events; assert that only Rail events are counted.
+  - [ ] Test `mostVisitedCountry` with a tie: two countries each visited on exactly 2 trips; assert the function returns the first country alphabetically (deterministic tie-break).
+  - [ ] Test `countriesVisited` alphabetical sort: fixture with countries in non-alphabetical insertion order; assert the returned `list` is sorted A-Z.
 - [ ] Run tests; all must pass before committing.
 - [ ] Commit: `feat(stats): add pure stats calculator and haversine distance functions with tests`
 
@@ -148,7 +153,7 @@ src/
 
 ### Step 5 — Profile screen Stats entry point and feature flag guard [~2 min]
 
-- [ ] In the existing Profile screen, add a "Stats" row in the menu list (after "Trip History") that navigates to the `StatsScreen` — this is the second entry point specified in the spec.
+- [ ] In the existing Profile screen, add a "Stats" row in the menu list (after "Trip History") that navigates to the `StatsScreen` — this is the second entry point specified in the spec. **Note: This requires the Profile tab to use a nested Stack navigator. Verify that `app/(tabs)/profile/_layout.tsx` defines a Stack navigator before creating `app/(tabs)/profile/stats.tsx`. If the Profile tab does not have a nested stack, add one in this step.**
 - [ ] Wrap the HealthKit section in `StatsScreen` with a feature flag check: read `stats_healthkit_enabled` from the `feature_flags` table (fetched alongside stats data in `useStatsData`); if the flag is `false`, render `TravelDashboard` only and do not import or invoke any HealthKit code (tree-shake safe).
 - [ ] Verify: with the flag `false`, the Health section is not visible; with the flag `true`, the full Health section (permission prompt or data) renders correctly.
 - [ ] Commit: `feat(stats): add Profile screen Stats entry point and feature flag guard`
@@ -166,3 +171,20 @@ Before considering this plan complete, verify:
 - [ ] **HealthKit permission denial handled gracefully** — `HealthSection` renders the "Enable in Settings" prompt when `permissionStatus === 'denied'`; `TravelDashboard` renders fully regardless.
 - [ ] **Most common travel companion ties handled** — `statsCalculator.ts` documents the tie-breaking rule (lexicographically smallest `user_id`); the test exercises a two-way tie and asserts the correct winner.
 - [ ] **No emojis** — search `StatsScreen.tsx`, `TravelDashboard.tsx`, `HealthSection.tsx`, and `StatCard.tsx` for emoji characters before committing Step 4.
+- [ ] **Feature flag tree-shake safety** — `stats_healthkit_enabled` feature flag is correctly read from the `feature_flags` table and gates the HealthKit section — when `false`, no HealthKit code is imported or executed (tree-shake safe).
+
+---
+
+## Review Fixes Applied
+
+The following targeted fixes were applied to this plan during review:
+
+- **Minor 1 — totalDaysAway overlap guard**: Updated `totalDaysAway` function signature to accept trip-level `{ minStart, maxEnd }` objects instead of raw destination rows. Added a note explaining that summing individual destination rows for multi-destination trips will double-count overlapping days; the caller must derive trip-level min/max dates via `MIN(start_date)` / `MAX(end_date)` grouped by trip.
+
+- **Minor 3 — Missing test cases for 5 of 12 metrics**: Added five explicit numbered checklist items to `statsCalculator.test.ts` step covering: `totalFlights` (Air-only filter), `totalCruises` (is_cruise flag), `totalTrainJourneys` (Rail-only filter), `mostVisitedCountry` tie-breaking (alphabetically first), and `countriesVisited` alphabetical sort verification.
+
+- **Minor 4 — subcategory_detail field name must be confirmed**: Added a warning note to the `totalRoadTrips` function definition directing the implementer to confirm before coding whether the car_hire/self_drive distinction lives in `subcategory` itself or a separate `subcategory_detail` field, and to update the filter accordingly.
+
+- **Minor 8 — Profile screen Stats routing**: Added a note to the Profile screen Stats entry point step directing the implementer to verify that `app/(tabs)/profile/_layout.tsx` defines a Stack navigator before creating `app/(tabs)/profile/stats.tsx`, and to add one if it does not exist.
+
+- **Minor — Self-review checklist missing feature flag check**: Added a checklist item confirming that the `stats_healthkit_enabled` feature flag correctly gates HealthKit code in a tree-shake-safe manner.

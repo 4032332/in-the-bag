@@ -199,7 +199,8 @@
   }
   ```
 
-- [ ] Step 2: Create `src/services/trips.ts` — implement `createTrip`, `getTrip`, `listActiveTrips`, `listPastTrips`, `updateTrip`. Each function uses the Supabase client from Plan 1's singleton. `listActiveTrips` filters on latest `trip_destinations.end_date >= today`; `listPastTrips` filters on latest `end_date < today`.
+- [ ] Step 2: Create `src/services/trips.ts` — implement `createTrip`, `getTrip`, `listActiveTrips`, `listPastTrips`, `updateTrip`. Each function uses the Supabase client from Plan 1's singleton. `listActiveTrips` and `listPastTrips` use a two-step query to correctly handle multi-destination trips: first fetch the user's trip IDs from `trip_participants`, then compute `MAX(end_date)` across all destinations per trip and filter on that.
+  **[C3 — Correct multi-destination active/past detection]** The naive approach of joining `trip_destinations!inner` and filtering on `end_date` fails for multi-destination trips because Supabase will match any destination row, not the last one. Use the corrected pattern below:
   ```typescript
   import { supabase } from '../lib/supabase';
   import { Trip, TripDestination, TripParticipant } from '../types/database';
@@ -224,17 +225,49 @@
     return data;
   }
 
+  /** Step 1: get trip IDs the user participates in. Step 2: compute MAX(end_date) per trip from
+   *  trip_destinations, then filter. This correctly handles multi-destination trips where the
+   *  !inner join approach would match any destination row instead of the final one. */
+  async function getUserTripIds(userId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('trip_participants')
+      .select('trip_id')
+      .eq('user_id', userId);
+    if (error) throw error;
+    return (data ?? []).map((r) => r.trip_id);
+  }
+
+  async function getTripMaxEndDates(tripIds: string[]): Promise<Map<string, string>> {
+    if (tripIds.length === 0) return new Map();
+    // Use a GROUP BY RPC or aggregate in JS. Supabase JS doesn't support GROUP BY natively,
+    // so fetch all destination rows for these trips and aggregate in JS.
+    const { data, error } = await supabase
+      .from('trip_destinations')
+      .select('trip_id, end_date')
+      .in('trip_id', tripIds);
+    if (error) throw error;
+    const map = new Map<string, string>();
+    for (const row of data ?? []) {
+      const current = map.get(row.trip_id);
+      if (!current || row.end_date > current) map.set(row.trip_id, row.end_date);
+    }
+    return map;
+  }
+
   export async function listActiveTrips(userId: string): Promise<Trip[]> {
     const today = new Date().toISOString().split('T')[0];
+    const tripIds = await getUserTripIds(userId);
+    if (tripIds.length === 0) return [];
+    const maxEndDates = await getTripMaxEndDates(tripIds);
+    const activeTripIds = tripIds.filter((id) => {
+      const maxEnd = maxEndDates.get(id);
+      return maxEnd !== undefined && maxEnd >= today;
+    });
+    if (activeTripIds.length === 0) return [];
     const { data, error } = await supabase
       .from('trips')
-      .select(`
-        *,
-        trip_destinations!inner(end_date),
-        trip_participants!inner(user_id)
-      `)
-      .eq('trip_participants.user_id', userId)
-      .gte('trip_destinations.end_date', today)
+      .select('*, trip_destinations(*), trip_participants(*)')
+      .in('id', activeTripIds)
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -242,15 +275,18 @@
 
   export async function listPastTrips(userId: string): Promise<Trip[]> {
     const today = new Date().toISOString().split('T')[0];
+    const tripIds = await getUserTripIds(userId);
+    if (tripIds.length === 0) return [];
+    const maxEndDates = await getTripMaxEndDates(tripIds);
+    const pastTripIds = tripIds.filter((id) => {
+      const maxEnd = maxEndDates.get(id);
+      return maxEnd !== undefined && maxEnd < today;
+    });
+    if (pastTripIds.length === 0) return [];
     const { data, error } = await supabase
       .from('trips')
-      .select(`
-        *,
-        trip_destinations!inner(end_date),
-        trip_participants!inner(user_id)
-      `)
-      .eq('trip_participants.user_id', userId)
-      .lt('trip_destinations.end_date', today)
+      .select('*, trip_destinations(*), trip_participants(*)')
+      .in('id', pastTripIds)
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data ?? [];
@@ -1028,6 +1064,15 @@
     const days = generateTripDays(trip.id, formData.destinations[0].start_date, formData.destinations[formData.destinations.length - 1].end_date);
     await createTripDays(trip.id, days);
     await enqueueJob({ type: 'cover_photo_fetch', input: { trip_id: trip.id }, trip_id: trip.id, user_id: user.id });
+    // [C2 — Premium async jobs on trip save]
+    if (isPremium) {
+      // AI task suggestions (premium only)
+      await enqueueJob({ type: 'pre_trip_checklist_generate', input: { trip_id: trip.id }, trip_id: trip.id, user_id: user.id });
+      // Imagen 3 treasure map background generation (premium only)
+      await enqueueJob({ type: 'treasure_map_generate', input: { trip_id: trip.id }, trip_id: trip.id, user_id: user.id });
+      // AI packing suggestions at trip scope — no event_id, no trip_day_id (premium only)
+      await enqueueJob({ type: 'in_the_bag_suggest', input: { trip_id: trip.id }, trip_id: trip.id, user_id: user.id });
+    }
     router.replace(`/trips/${trip.id}`);
   }
 
@@ -1129,11 +1174,23 @@
   - `offline_docs_7d`: "Save critical documents for offline access" — Save Now + Later
   - `wifi_day_of`: "Connect to airport WiFi as soon as you land" — dismiss only
 
-- [ ] Step 5: Create `src/components/trips/MilestoneBannerList.tsx` — calls `getVisibleBanners` and renders the appropriate subset of `MilestoneBanner` components. Calculates days until departure from the first trip destination's `start_date` and filters banners by their threshold (30d, 14d, 7d, day-of). Passes mutation callbacks that call `dismissBanner` / `snoozeBanner` and then refresh the visible list.
+- [ ] Step 5: Create `src/components/trips/MilestoneBannerList.tsx` — queries and renders the visible banner stack. Implement the following steps explicitly in order: **[C5 — Banner threshold gating]**
+  1. Compute `daysUntilDeparture` from `Math.ceil((parseISO(tripStartDate) - new Date()) / 86400000)`.
+  2. Define the five banner trigger windows:
+     - `insurance_30d`: visible when `daysUntilDeparture <= 30`
+     - `visa_14d`: visible when `daysUntilDeparture <= 14`
+     - `esim_7d`: visible when `daysUntilDeparture <= 7`
+     - `offline_docs_7d`: visible when `daysUntilDeparture <= 7`
+     - `wifi_day_of`: visible when `daysUntilDeparture <= 0`
+  3. Filter the five banner keys down to those whose window condition is met, producing `windowActiveBanners`.
+  4. Call `getVisibleBanners(tripId, userId)` to obtain the dismiss/snooze state for each banner from Supabase.
+  5. Cross-reference: only render banners that are both in `windowActiveBanners` AND not filtered out by `getVisibleBanners` (i.e. not dismissed and not currently snoozed).
+  6. Render the resulting subset as a stack of `MilestoneBanner` components.
+  7. Pass `onDismiss` → `dismissBanner`, `onSnooze` → `snoozeBanner` callbacks and refresh the visible list after each mutation.
 
 - [ ] Step 6: Create `src/components/trips/PreTripChecklist.tsx` — renders My Tasks section. Shows a list of `TripTask` rows (from `listMyTasks`). Each row: checkbox + title. Tapping checkbox calls `toggleTaskComplete`. A small inline "+" button at the bottom of the list opens a modal text input to add a new task via `addManualTask`. Free users see only this section. Premium Suggested Tasks section is a stub (`{/* AI Suggested Tasks — Plan 3 */}`) commented placeholder.
 
-- [ ] Step 7: Create `app/(app)/trips/[tripId]/summary.tsx` — assembles `CoverPhotoHeader`, `MilestoneBannerList`, `PreTripChecklist`, and a share icon stub (right of header — tapping shows "Coming soon" toast). `Offline Documents` button is shown only when a local MMKV flag `offline_docs_saved_${tripId}` is truthy — button is hidden by default (spec Section 24).
+- [ ] Step 7: Create `app/(app)/trips/[tripId]/summary.tsx` — assembles `CoverPhotoHeader`, `MilestoneBannerList`, `PreTripChecklist`, and a share icon stub (right of header — tapping shows "Coming soon" toast). `Offline Documents` button is shown only when a local MMKV flag `offline_save_done_${tripId}` is truthy — button is hidden by default (spec Section 24). **[C4]** The key must be `offline_save_done_${tripId}` (not `offline_docs_saved_${tripId}`) to match the spec Section 24 definition and Plan 9's implementation.
 
 - [ ] Step 8: Commit
   ```bash
@@ -1417,6 +1474,19 @@
   2. Calls `createEvent` with the form values, `trip_day_id`, `trip_id`, `category`, and `subcategory`.
   3. Calls `onEventCreated(newEvent)` callback to refresh the parent list.
   4. Closes the sheet.
+  5. **[C1 — Premium async job]** After a successful `createEvent` call, if `isPremium && !isDemoMode()`, enqueue an AI packing suggestions job:
+     ```typescript
+     if (isPremium && !isDemoMode()) {
+       await enqueueJob({
+         type: 'in_the_bag_suggest',
+         input: { event_id: newEvent.id, trip_id, trip_day_id },
+         event_id: newEvent.id,
+         trip_id,
+         user_id: user.id,
+       });
+     }
+     ```
+     This is premium-only per spec. Free and demo-mode users do not trigger AI packing suggestions on event save.
 
 - [ ] Step 4: Wire `EventDetailSheet` as the final step in both `AddToDaySheet` and `AddToWholeTripSheet`.
 
@@ -1519,7 +1589,17 @@
 
 - [ ] Step 1: Create `app/(app)/history.tsx` — reads past trips via `listPastTrips`. Renders a `FlatList` of `TripCard` components. On tap, navigates to `/trips/[tripId]` but the screen must open in read-only mode. Pass a `readOnly` query param: `/trips/${id}?readOnly=true`.
 
-- [ ] Step 2: In `app/(app)/trips/[tripId]/index.tsx`, read the `readOnly` param from `useLocalSearchParams`. When `readOnly === 'true'`: hide the `+` button and hide "Edit" buttons on the Summary and Event screens. Show a "This trip is in the past" banner at the top.
+- [ ] Step 2: In `app/(app)/trips/[tripId]/index.tsx`, read the `readOnly` param from `useLocalSearchParams`. When `readOnly === 'true'`: hide the `+` button and hide "Edit" buttons on the Summary and Event screens. Show a "This trip is in the past" banner at the top. **[M7 — Read-only derived from trip end date, not only URL param]** Read-only mode must also be enforced by checking the trip's own end date, so that deep-linked past trips (e.g. from push notifications) open in read-only mode even without the `readOnly` query param:
+  ```typescript
+  const { readOnly: readOnlyParam } = useLocalSearchParams<{ readOnly?: string }>();
+  // Also compute from trip data once loaded
+  const tripMaxEnd = trip?.trip_destinations
+    ? trip.trip_destinations.reduce((max, d) => (d.end_date > max ? d.end_date : max), '')
+    : '';
+  const isPastTrip = tripMaxEnd !== '' && tripMaxEnd < new Date().toISOString().split('T')[0];
+  const isReadOnly = readOnlyParam === 'true' || isPastTrip;
+  ```
+  Use `isReadOnly` (not `readOnlyParam`) throughout the Trip screen shell and child screens.
 
 - [ ] Step 3: Wire the Trip History screen to `Profile > Trip History` entry point (modify `app/(app)/profile/index.tsx` or equivalent from Plan 1 to add a "Trip History" row that navigates to `/history`).
 
@@ -1588,3 +1668,21 @@
 - [x] No emojis anywhere in UI copy (spec Section 7) ✓
 - [x] All steps estimated at 2-5 minutes each ✓
 - [x] Each task ends with a git commit ✓
+
+---
+
+## Review Fixes Applied
+
+The following fixes were applied to this plan on 2026-06-24:
+
+- **C1 — Queue `in_the_bag_suggest` async job on event save:** Added to Task 9, Step 3 (EventDetailSheet save handler). After a successful `createEvent`, if `isPremium && !isDemoMode()`, enqueues an `in_the_bag_suggest` job with `event_id`, `trip_id`, and `trip_day_id`. Premium-only per spec.
+
+- **C2 — Queue additional async jobs on trip save:** Added to Task 4, Step 6 (`handleCreateTrip`). After the existing `cover_photo_fetch` enqueue, premium users also receive: `pre_trip_checklist_generate` (AI task suggestions), `treasure_map_generate` (Imagen 3 background), and `in_the_bag_suggest` at trip scope (no `event_id`, no `trip_day_id`).
+
+- **C3 — Fix listActiveTrips/listPastTrips for multi-destination trips:** Task 1, Step 2 rewritten. The naive `!inner` join approach was replaced with a two-step query: (1) fetch the user's trip IDs from `trip_participants`; (2) fetch all `trip_destinations` rows for those trips and compute `MAX(end_date)` per trip in JS; (3) filter trip IDs by whether `max_end >= today` (active) or `max_end < today` (past); (4) fetch full trip rows by ID. Helper functions `getUserTripIds` and `getTripMaxEndDates` document the pattern.
+
+- **C4 — Fix MMKV key for offline save status:** Task 5, Step 7 updated. The MMKV flag key is `offline_save_done_${tripId}` (not `offline_docs_saved_${tripId}`), matching spec Section 24 and Plan 9's implementation.
+
+- **C5 — Milestone banner threshold gating:** Task 5, Step 5 (MilestoneBannerList) expanded into a seven-point numbered checklist. Steps: (1) compute `daysUntilDeparture`; (2) define the five trigger windows (30d, 14d, 7d, 7d, 0d); (3) filter to `windowActiveBanners`; (4) call `getVisibleBanners` for dismiss/snooze state; (5) cross-reference both filters; (6) render; (7) wire mutation callbacks.
+
+- **M7 — Trip History read-only derived from trip end date, not only URL param:** Task 11, Step 2 updated. In addition to checking `readOnly === 'true'` from the URL param, the screen now computes `isPastTrip` from `MAX(end_date)` across the trip's destinations. The combined `isReadOnly = readOnlyParam === 'true' || isPastTrip` is used throughout, ensuring deep-linked past trips (e.g. from push notifications) open in read-only mode without requiring the query param.

@@ -54,7 +54,7 @@ supabase/
 ### Step 2 — Supabase Edge Function: RevenueCat webhook
 
 - [ ] Create `supabase/functions/revenuecat-webhook/index.ts`:
-  - Verify `Authorization` header matches `REVENUECAT_WEBHOOK_SECRET` env var (HMAC or shared secret per RevenueCat docs).
+  - Verify `Authorization` header: compare `request.headers.get('Authorization')` directly against the `REVENUECAT_WEBHOOK_SECRET` environment variable using a constant-time comparison (to prevent timing attacks). Return `401` if they do not match. Do not use HMAC — RevenueCat sends a plain shared secret in the Authorization header.
   - Parse event body — supported event types: `INITIAL_PURCHASE`, `RENEWAL`, `CANCELLATION`, `EXPIRATION`, `UNCANCELLATION`.
   - Extract `app_user_id` (maps to `users.id`) and `product_identifier` to derive `type` (`monthly` | `lifetime`).
   - Upsert `subscriptions` row: `{ user_id, type, status, expires_at, revenuecat_customer_id, updated_at }`.
@@ -94,7 +94,22 @@ supabase/
   3. **Active subscription query** — query `subscriptions` table for `user_id = auth.uid()` and `status = 'active'` and (`expires_at IS NULL` OR `expires_at > now()`).
      - If found → `isPremium = true`.
 
-  4. **Sponsor query** — if no active own subscription, query `trip_participants` for rows where `user_id = auth.uid()` and `is_premium_sponsor = false` (i.e. the user is a co-participant, not the sponsor themselves) AND the trip's `end_date >= today`. Join to `trips` to get `end_date`.
+  4. **Sponsor query** — if no active own subscription, find any `trip_participants` row where `user_id = auth.uid()` AND the SAME trip has ANOTHER participant with `is_premium_sponsor = true` AND the trip's `end_date >= today`. The corrected Supabase query pattern:
+
+     ```typescript
+     const { data } = await supabase
+       .from('trip_participants')
+       .select('trip_id, trips!inner(end_date)')
+       .eq('user_id', userId)
+       .eq('is_premium_sponsor', false) // this user is NOT the sponsor
+       .gte('trips.end_date', today)
+       .in('trip_id',
+         // subquery: trips that HAVE a sponsor
+         supabase.from('trip_participants').select('trip_id').eq('is_premium_sponsor', true)
+       )
+     ```
+
+     Alternatively restructure as two sequential queries. The key invariant: `is_premium_sponsor = false` matches rows where the current user is a co-participant (not the sponsor), filtered to trips that also have a sponsor row. Do NOT query `is_premium_sponsor = false` without the `in` subquery — that would match every ordinary participant on every trip and return `isPremium = true` incorrectly for all free users.
      - If any such row exists → `isPremium = true` (sponsor's benefit persists until trip end).
 
   5. **Fallback** → `isPremium = false`.
@@ -139,7 +154,7 @@ supabase/
 
   **`variant = 'authenticated'`** layout:
   - Feature title + description
-  - Two product cards side by side: Premium Monthly ($6.99/month) and Premium Lifetime ($44.99)
+  - Two product cards side by side: Premium Monthly and Premium Lifetime. **Prices must be fetched from RevenueCat at sheet mount time** using `Purchases.getOfferings()`. Display the localised price strings from `offerings.current.monthly.product.priceString` and `offerings.current.lifetime.product.priceString`. Show a loading skeleton while offerings load. Do not hardcode price strings — this ensures correct currency display for international users and compliance with App Store Review Guidelines.
   - "Subscribe" button (calls `purchaseMonthly()` or `purchaseLifetime()` based on selected card; closes sheet on success)
   - "Restore Purchase" button (calls `restorePurchases()`)
   - "Maybe Later" button (calls `onClose()`)
@@ -239,6 +254,20 @@ Gate location: `src/components/InTheBag/InTheBagSheet.tsx` — AI suggestions se
 
 ---
 
+### Step 10b — Wire gate point: Suggested Tasks (pre-trip checklist)
+
+Gate location: `PreTripChecklist` component in `TripSummaryTab` (Plan 2).
+
+The Trip Summary tab's pre-trip checklist has two sections: manually-added tasks and AI-generated Suggested Tasks (`is_suggested = true`). The Suggested Tasks section is premium-only.
+
+- [ ] Import `usePremium` hook in the `PreTripChecklist` component.
+- [ ] If `!isPremium`: **hide the Suggested Tasks section entirely** — do not render it at all, do not show a locked/greyed state. Free users simply see no Suggested Tasks section.
+- [ ] If `isPremium`: display AI-suggested tasks as described in the spec (existing Plan 2 implementation).
+- [ ] Confirm: there is no `UpgradePromptSheet` at this gate — the section is silently omitted for free users.
+- [ ] Commit: `feat: gate Suggested Tasks section in pre-trip checklist behind premium`
+
+---
+
 ### Step 11 — Premium sponsor logic (family sharing)
 
 - [ ] Create `supabase/functions/_shared/premiumSponsor.ts`:
@@ -249,10 +278,21 @@ Gate location: `src/components/InTheBag/InTheBagSheet.tsx` — AI suggestions se
   // Returns null if no participant holds an active subscription.
   ```
 
-  Logic:
-  1. Query `trip_participants` for `trip_id = tripId` where `user_id IS NOT NULL`.
-  2. For each `user_id`, check `subscriptions` for `status = 'active'` and `expires_at > now()` (or lifetime).
-  3. Return the lowest `user_id` (string sort ascending) that has an active subscription, or `null`.
+  Logic: execute a single SQL query — do NOT iterate client-side over participants:
+
+  ```sql
+  SELECT tp.user_id
+  FROM trip_participants tp
+  JOIN subscriptions s ON s.user_id = tp.user_id
+  WHERE tp.trip_id = $tripId
+    AND tp.user_id IS NOT NULL
+    AND s.status = 'active'
+    AND (s.expires_at IS NULL OR s.expires_at > now())
+  ORDER BY tp.user_id ASC
+  LIMIT 1
+  ```
+
+  This returns the correct sponsor in one round-trip with deterministic ordering. Return the `user_id` result, or `null` if no rows returned.
 
 - [ ] Write `premiumSponsor.test.ts`:
   - [ ] Single participant with active sub → returned as sponsor
@@ -262,10 +302,22 @@ Gate location: `src/components/InTheBag/InTheBagSheet.tsx` — AI suggestions se
   - [ ] Mix of guest_profile_id rows (no user_id) and user rows → guest rows ignored in sponsor selection
 
 - [ ] Create `src/lib/sponsorEvaluation.ts` (client-side, called at trip creation time):
-  - `evaluateSponsor(tripId, participants, supabaseClient)` — mirrors the Edge Function logic for use in the trip creation flow.
-  - After evaluating, performs two writes in a single transaction:
-    1. Set `is_premium_sponsor = false` for all current sponsors on this trip.
-    2. Set `is_premium_sponsor = true` for the selected sponsor (if any).
+  - `evaluateSponsor(tripId, supabaseClient)` — calls the Supabase RPC function `evaluate_trip_sponsor($tripId)`.
+  - **Atomicity requirement:** the two-step write (clear all sponsors, set new sponsor) must be atomic to prevent race conditions. Implement this as a Supabase RPC function that runs both writes in a single database transaction:
+    ```sql
+    -- RPC: evaluate_trip_sponsor(trip_id uuid)
+    UPDATE trip_participants SET is_premium_sponsor = false WHERE trip_id = $1;
+    UPDATE trip_participants SET is_premium_sponsor = true
+      WHERE trip_id = $1 AND user_id = (
+        SELECT tp.user_id FROM trip_participants tp
+        JOIN subscriptions s ON s.user_id = tp.user_id
+        WHERE tp.trip_id = $1 AND tp.user_id IS NOT NULL
+          AND s.status = 'active' AND (s.expires_at IS NULL OR s.expires_at > now())
+        ORDER BY tp.user_id ASC LIMIT 1
+      );
+    ```
+    Add this RPC to the Plan 1 schema migration or as a new migration in this plan.
+  - The client calls `supabase.rpc('evaluate_trip_sponsor', { trip_id: tripId })` — not two separate client-side update calls.
 
 - [ ] Hook into trip creation flow (`src/screens/trip/CreateTrip/index.tsx`):
   - After the trip record and `trip_participants` rows are inserted, call `evaluateSponsor`.
@@ -301,6 +353,7 @@ Gate location: `src/components/InTheBag/InTheBagSheet.tsx` — AI suggestions se
 
 - [ ] `src/lib/demoMode.ts`:
   - `isDemoMode(): boolean` — returns `true` if `MMKV.getString('demo_tier')` is not null; gated by build flag (`__DEV__ || IS_TESTFLIGHT`).
+  - **Defining `IS_TESTFLIGHT`:** In `eas.json`, add `'IS_TESTFLIGHT': 'true'` to the `env` section of the `preview` build profile, and omit it (or set `'IS_TESTFLIGHT': 'false'`) in the `production` profile. Read it in `app.config.ts` via `process.env.IS_TESTFLIGHT` and expose via `expo-constants` extra field (e.g. `extra: { isTestFlight: process.env.IS_TESTFLIGHT === 'true' }`). Access in `demoMode.ts` via `Constants.expoConfig?.extra?.isTestFlight`.
   - `getDemoTier(): 'free' | 'premium' | null`.
   - `setDemoTier(tier: 'free' | 'premium'): void` — writes to MMKV.
 
@@ -338,4 +391,32 @@ Gate location: `src/components/InTheBag/InTheBagSheet.tsx` — AI suggestions se
 - [ ] Demo bypass confirmed at every gate point — no RevenueCat calls in demo mode
 - [ ] Demo banner renders in dev/TestFlight only; absent in production builds
 - [ ] Gold profile ring appears for premium users and for premium demo tier
+- [ ] All 7+ gate points covered (including Suggested Tasks pre-trip checklist — silently hidden for free users)
 - [ ] No emojis in any UI copy (Section 7 rule)
+
+---
+
+## Review Fixes Applied
+
+The following targeted fixes were applied to this plan after initial review:
+
+**C1 — Suggested Tasks gate (Step 10b added)**
+Added a new step wiring the premium gate for the Suggested Tasks section in the pre-trip checklist. Free users see no Suggested Tasks section at all (silently omitted, not locked). This gate was missing from the original plan.
+
+**C2 — RevenueCat webhook authentication (Step 2)**
+Changed authentication description from "HMAC or shared secret" to constant-time direct comparison of the `Authorization` header against `REVENUECAT_WEBHOOK_SECRET`. RevenueCat uses a plain shared secret, not HMAC.
+
+**C3 — `selectSponsor` uses SQL ORDER BY (Step 11)**
+Replaced the client-side loop ("for each user_id, check subscriptions") with a single SQL query using a JOIN and `ORDER BY tp.user_id ASC LIMIT 1`. Returns the correct sponsor in one round-trip with deterministic ordering.
+
+**C4 — `evaluateSponsor` is atomic via RPC (Step 11)**
+Replaced two separate client-side update calls with a single Supabase RPC (`evaluate_trip_sponsor`) that runs both writes (clear sponsors, set sponsor) in one database transaction. Prevents race conditions. RPC must be added to a schema migration.
+
+**M1 — `useSubscription` sponsor query corrected (Step 3)**
+The sponsor query was logically backwards — `is_premium_sponsor = false` alone would match every free user on every trip. The corrected query adds an `in` subquery to filter to trips that also have a sponsor row, so only genuine co-participants on sponsored trips receive `isPremium = true`.
+
+**M4 — `IS_TESTFLIGHT` build flag concretely defined (Step 14)**
+Added concrete implementation: set `IS_TESTFLIGHT: 'true'` in the `preview` EAS build profile env, read it in `app.config.ts` via `process.env.IS_TESTFLIGHT`, expose via `expo-constants` extra field, and access in `demoMode.ts` via `Constants.expoConfig?.extra?.isTestFlight`.
+
+**M5 — Prices fetched from RevenueCat, not hardcoded (Step 4)**
+Replaced hardcoded price strings (`"$6.99/month"`, `"$44.99"`) with a call to `Purchases.getOfferings()` at sheet mount time, displaying localised `priceString` values. Shows a loading skeleton while offerings load. Required for correct international currency display and App Store Review Guidelines compliance.

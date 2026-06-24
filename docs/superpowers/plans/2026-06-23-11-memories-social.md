@@ -119,6 +119,17 @@ src/
   - `PieceGeometry` defines: `boundingRect`, four edge tab/slot specs (top/right/bottom/left), each edge is `tab` | `slot` | `flat`
   - Interlocking rule: shared edges between adjacent pieces must be complementary (one tab, one slot). Adjacency is determined by a left-to-right, top-to-bottom grid layout. Edge assignment: right edge of piece N is `tab` → left edge of piece N+1 is `slot`. Bottom edge of piece N is `tab` → top edge of piece in same column on next row is `slot`. First row top edges and first column left edges are `flat`. Rightmost column right edges and bottom row bottom edges are `flat` (or `tab` for visual interest — consistent per column/row index).
   - Tab/slot curves are cubic bezier curves; control point offsets are fixed constants (not random) so pieces always fit regardless of total count.
+  - Suggested tab geometry constants (export as named constants from `puzzlePieceGeometry.ts`):
+    ```
+    TAB_PROTRUSION = 10   // pt, how far the tab sticks out from the edge
+    TAB_WIDTH_RATIO = 0.3 // tab base width as fraction of edge length
+    Control points for cubic bezier:
+        P1 = (edgeStart + edge*0.2, edgeY - TAB_PROTRUSION)
+        P2 = (edgeStart + edge*0.8, edgeY - TAB_PROTRUSION)
+      (For slots, flip the protrusion sign: + TAB_PROTRUSION)
+    The TAB_PROTRUSION value (~10pt) is also used as the negative margin between adjacent
+    pieces to create visual interlocking.
+    ```
   - Grid column count: 2 for 1–4 pieces, 3 for 5–9 pieces, 4 for 10+ pieces.
   - Exports `getPieceGridPosition(index: number, totalPieces: number): { col: number, row: number }`
 
@@ -161,6 +172,7 @@ src/
   - Below the SVG: destination city name in bold, trip year in smaller text
   - Card has a subtle drop shadow
   - Horizontal FlatList in `MemoriesSection` when style = monopoly_figures; each card is approx 130×180 pt
+  - **Note:** this renderer uses `react-native-svg` for the SVG figure assets, while the surrounding card chrome (background, shadow, text) uses React Native View/Text primitives. This is intentional — SVG assets are best rendered via react-native-svg, not Skia. The architecture statement "all rendering via Skia" applies to the canvas-based Memories styles (Postcards, Polaroids, Stamps, Puzzle Pieces); Monopoly Figures intentionally uses react-native-svg for the SVG layer.
 
 - [ ] Commit: `feat: monopoly figures renderer with destination-themed SVG assets`
 
@@ -181,7 +193,8 @@ src/
 - [ ] Create `src/hooks/useSocialPostCreator.ts`
   - Exports `useSocialPostCreator()`
   - Returns `{ savePostcard, saveStatsCard, isSaving, error }`
-  - `savePostcard(trip, day?)`: takes a Skia `SkSurface` ref, calls `surface.makeImageSnapshot()`, converts to base64 PNG, requests camera roll permission via `requestCameraRollPermission`, calls `MediaLibrary.saveToLibraryAsync` with the PNG URI; handles denial by calling `showPermissionDeniedAlert`; sets `isSaving` during the operation
+  - `savePostcard(trip, day?, canvasRef: RefObject<SkiaView>)`: calls `canvasRef.current?.makeImageSnapshot()`, converts to base64 PNG, requests camera roll permission via `requestCameraRollPermission`, calls `MediaLibrary.saveToLibraryAsync` with the PNG URI; handles denial by calling `showPermissionDeniedAlert`; sets `isSaving` during the operation
+  - **Note:** The Skia Canvas ref's `makeImageSnapshot()` operates at the canvas's pixel dimensions (1080×720 or 1080×1080), producing a full-resolution PNG.
   - `saveStatsCard(trip, day?, healthKitData?)`: same save pipeline; `healthKitData` is optional (typed as `{ steps?: number }`) — if null/undefined, steps are simply omitted from the card without error
 
 - [ ] Create `src/components/social/PostcardCreator.tsx`
@@ -191,8 +204,8 @@ src/
   - Layer 3 (bottom-left): trip/day name in large serif or handwriting font; dates below in smaller weight; destination city below dates
   - Layer 4 (bottom-right): small "In the Bag" wordmark (text only — no emojis)
   - Uses `useCanvasRef` + `makeImageSnapshot` for PNG export
-  - Props: `trip`, `day` (optional — if provided, shows day name instead of trip name), `onSave(surface)`
-  - "Save to Camera Roll" button below the preview calls `onSave`
+  - Props: `trip`, `day` (optional — if provided, shows day name instead of trip name), `onSave(canvasRef: RefObject<SkiaView>)`
+  - "Save to Camera Roll" button below the preview calls `onSave`, passing the canvas ref (from `useCanvasRef`) — not a surface object
 
 - [ ] Create `src/components/social/StatsCardCreator.tsx`
   - Skia canvas: 1080×1080 px square
@@ -204,8 +217,9 @@ src/
     - Steps (only rendered if `healthKitSteps` prop is defined and non-null; label "Steps taken"; if undefined, this stat block is omitted entirely — no blank space, remaining stats reflow)
     - Highlights: top 3 event titles (Activity or Meal category events by start_time)
   - "In the Bag" wordmark at top of card
-  - Props: `trip`, `day` (optional), `healthKitSteps?: number`, `onSave(surface)`
-  - "Save to Camera Roll" button calls `onSave`
+  - Props: `trip`, `day` (optional), `healthKitSteps?: number`, `onSave(canvasRef: RefObject<SkiaView>)`
+  - "Save to Camera Roll" button calls `onSave`, passing the canvas ref (from `useCanvasRef`) — not a surface object
+  - **Multi-destination display:** for multi-destination trips, display all destination city names joined with ' · ' (e.g. 'London · Paris · Rome'), not just the primary destination. Truncate with '...' if the string exceeds 3 destinations.
 
 - [ ] Commit: `feat: camera roll permission handling and social post creator (Postcard + Stats Card)`
 
@@ -254,3 +268,17 @@ Before marking this plan complete, verify:
 - **Plan 1** (project setup, Supabase client, Expo Router navigation) — required
 - **Plan 2** (trips data model, cover photo URLs, trip participants) — required for trip data props
 - **Plan 8** (HealthKit integration, `useHealthKitData` hook) — required for Stats Card step count; Stats Card degrades gracefully if Plan 8 is not yet integrated
+
+---
+
+## Review Fixes Applied
+
+The following targeted fixes were applied to this plan (2026-06-24):
+
+- **Minor 3.1 — Puzzle piece bezier control point values:** Added explicit suggested constants (`TAB_PROTRUSION`, `TAB_WIDTH_RATIO`, bezier control point formulas for tab and slot) to the `puzzlePieceGeometry.ts` step, with a note to export them as named constants.
+
+- **Minor 3.3 — MonopolyFigureRenderer uses react-native-svg:** Added an explicit architectural note to the `MonopolyFigureRenderer` step clarifying that the SVG figure layer uses `react-native-svg` (not Skia), and that the "all rendering via Skia" architecture statement applies only to the canvas-based styles (Postcards, Polaroids, Stamps, Puzzle Pieces).
+
+- **Minor 3.4 — makeImageSnapshot API type mismatch:** Changed `onSave(surface)` to `onSave(canvasRef: RefObject<SkiaView>)` in both `PostcardCreator.tsx` and `StatsCardCreator.tsx`. Updated `useSocialPostCreator` to use `canvasRef.current?.makeImageSnapshot()` instead of a surface ref. Added a note about pixel dimensions (1080×720 or 1080×1080).
+
+- **Minor 3.2 — Stats Card multi-destination display:** Added a note to `StatsCardCreator.tsx` specifying that multi-destination trips display all city names joined with ' · ', truncated with '...' beyond 3 destinations.

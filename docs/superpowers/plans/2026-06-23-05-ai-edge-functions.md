@@ -56,7 +56,7 @@ app/
 ### Step 1 — Shared infrastructure
 
 - [ ] Create `supabase/functions/_shared/types.ts` defining:
-  - `JobType` union: `'cover_photo_fetch' | 'pre_trip_checklist_generate' | 'treasure_map_generate' | 'in_the_bag_suggest' | 'ai_trip_suggest' | 'ai_day_suggest' | 'flight_lookup'`
+  - `JobType` union: `'cover_photo_fetch' | 'pre_trip_checklist_generate' | 'treasure_map_generate' | 'in_the_bag_suggest' | 'ai_trip_suggest' | 'ai_day_suggest' | 'flight_lookup' | 'youtube_extract' | 'tiktok_extract'`
   - `AsyncJob` interface matching the `async_jobs` table schema (id, type, status, input, output, trip_id, event_id, user_id, created_at, completed_at, error)
   - Per-job input and output payload interfaces (e.g. `CoverPhotoFetchInput`, `InTheBagSuggestInput`)
 
@@ -86,9 +86,11 @@ app/
 
 - [ ] Create `supabase/functions/dispatcher/index.ts`:
   - Accept POST requests with body `{ jobId: string }`
+  - **Authenticate the caller:** extract the `Authorization: Bearer <token>` header; verify it is either (a) a valid Supabase user JWT via `supabaseAdmin.auth.getUser(token)` (for app-initiated calls via `supabase.functions.invoke`) or (b) the `SUPABASE_SERVICE_ROLE_KEY` (for internal server-to-server calls); reject with 401 if neither check passes
   - Fetch the `async_jobs` row by `jobId` using `supabaseAdmin`
+  - **Authorise the caller:** if the request used a user JWT (not service-role), verify that `job.user_id === authenticatedUser.id`; reject with 403 if they do not match
   - Reject if job status is not `'pending'` (return 409 with message `"Job already processed"`)
-  - Route by `job.type` to the appropriate handler module via a `switch` statement; import handlers dynamically or statically as preferred by Deno
+  - Route by `job.type` to the appropriate handler module via a `switch` statement; import handlers dynamically or statically as preferred by Deno; handled types: `cover_photo_fetch`, `pre_trip_checklist_generate`, `treasure_map_generate`, `in_the_bag_suggest`, `ai_trip_suggest`, `ai_day_suggest`, `flight_lookup`, `youtube_extract`, `tiktok_extract`
   - Return 200 `{ success: true }` after invoking the handler; handler is responsible for updating job status
   - Return 500 with error message if the job type is unrecognised
   - The dispatcher itself does NOT call `markJobProcessing`; each handler does that first
@@ -152,6 +154,7 @@ app/
 
     Focus on: visa requirements, travel insurance, medication import rules, banking/currency, international driving permit, e-SIM/connectivity, vaccinations, accessibility preparation.
     For cruise trips, also include: cruise insurance, port entry/visa requirements, onboard account setup.
+    Do not use emojis anywhere in your response.
     Return only the JSON array. No markdown fences, no explanation.
     ```
   - Call `generateContent('gemini-2.5-pro', ...)` — parse response as JSON array
@@ -314,6 +317,66 @@ app/
 
 ---
 
+### Step 8b — youtube_extract and tiktok_extract handlers
+
+**Job input (both types):** `{ trip_id: string; url: string; user_id: string }`
+**Job output:** `{ items: Array<{ type: 'event' | 'task'; label: string; timestamp: string | null; classification: string }> }`
+
+- [ ] Create `supabase/functions/youtube-extract/index.ts`:
+  - Call `markJobProcessing(jobId)`
+  - Fetch `input.url` from the `async_jobs` row
+  - Call `generateContent('gemini-2.5-pro', ...)` with prompt:
+    ```
+    You are a travel content extraction assistant. Analyse the YouTube video at the following URL and extract all named places, activities, restaurants, hotels, and practical travel tips mentioned in the video transcript or description.
+
+    URL: [input.url]
+
+    Return a JSON array of items. Each item must have:
+    - "type": "event" or "task"
+    - "label": string — the place or action name (e.g. "Lunch at Nobu Malibu", "Book tickets to Colosseum in advance")
+    - "timestamp": string or null — approximate video timestamp where mentioned (e.g. "02:34"), or null if unknown
+    - "classification": string — category label (e.g. "restaurant", "attraction", "hotel", "tip", "activity")
+
+    Do not use emojis anywhere in your response.
+    Return only the JSON array. No markdown fences, no explanation.
+    ```
+  - Parse response as JSON array; validate each item has `type`, `label`, `timestamp`, `classification`; discard malformed items
+  - Write validated array to `async_jobs.output` as `{ items: [...] }`
+  - Call `markJobCompleted(jobId, { items: parsedItems })`
+  - On any error: call `markJobFailed(jobId, error.message)`
+
+- [ ] Create `supabase/functions/tiktok-extract/index.ts`:
+  - Identical structure to `youtube-extract/index.ts` with the URL passed to Gemini as a TikTok URL; the prompt is the same but references "TikTok video" instead of "YouTube video"
+  - Call `markJobProcessing(jobId)`
+  - Call `generateContent('gemini-2.5-pro', ...)` with prompt:
+    ```
+    You are a travel content extraction assistant. Analyse the TikTok video at the following URL and extract all named places, activities, restaurants, hotels, and practical travel tips mentioned in the video or caption.
+
+    URL: [input.url]
+
+    Return a JSON array of items. Each item must have:
+    - "type": "event" or "task"
+    - "label": string — the place or action name
+    - "timestamp": string or null — approximate video timestamp where mentioned, or null if unknown
+    - "classification": string — category label (e.g. "restaurant", "attraction", "hotel", "tip", "activity")
+
+    Do not use emojis anywhere in your response.
+    Return only the JSON array. No markdown fences, no explanation.
+    ```
+  - Parse, validate, and write output identically to `youtube-extract`
+  - Call `markJobCompleted(jobId, { items: parsedItems })`
+  - On any error: call `markJobFailed(jobId, error.message)`
+
+- [ ] App-side wiring:
+  - In the Explore screen "Enhance My Trip" URL input submit handler: detect URL domain (`youtube.com`, `youtu.be` → `youtube_extract`; `tiktok.com` → `tiktok_extract`); call `queueJob({ type, input: { trip_id, url, user_id }, tripId: trip_id, userId })`
+  - Subscribe to the returned `jobId` via `useAsyncJob(jobId)`; while `pending` or `processing`, show a loading indicator in the Explore screen: "Extracting travel ideas from video..."
+  - When job `status === 'completed'`, read `job.output.items` and render as a checklist in the Explore screen so the user can select which items to add to their trip
+  - If job fails, show inline error: "Could not extract ideas from this video — please try a different URL"
+
+- [ ] Commit: `feat: add youtube_extract and tiktok_extract Edge Function handlers with app-side wiring`
+
+---
+
 ### Step 9 — vision-scan synchronous endpoint
 
 This is NOT an async job. It is called directly from the app during document upload and returns parsed fields immediately.
@@ -322,7 +385,7 @@ This is NOT an async job. It is called directly from the app during document upl
 **Response:** `{ fields: Record<string, string | null> }`
 
 - [ ] Create `supabase/functions/vision-scan/index.ts`:
-  - Verify `Authorization: Bearer <supabase_anon_key>` header is present (standard Supabase Edge Function auth)
+  - **Authenticate the caller via user JWT:** extract the `Authorization: Bearer <token>` header; call `supabaseAdmin.auth.getUser(token)` to validate it is a signed Supabase user JWT; reject with 401 if absent or invalid — the anon key is public and does not establish user identity, so it must not be accepted as sole authentication
   - Build per-document-type prompt:
     - `boarding_pass`:
       ```
@@ -492,7 +555,7 @@ This is NOT an async job. It is called directly from the app during document upl
 
 ## Self-review checklist
 
-- [x] All 7 async job types covered: `cover_photo_fetch`, `pre_trip_checklist_generate`, `treasure_map_generate`, `in_the_bag_suggest` (handles both trip-level and event-level in one handler), `ai_trip_suggest`, `ai_day_suggest`, `flight_lookup`
+- [x] All 9 async job types covered: `cover_photo_fetch`, `pre_trip_checklist_generate`, `treasure_map_generate`, `in_the_bag_suggest` (handles both trip-level and event-level in one handler), `ai_trip_suggest`, `ai_day_suggest`, `flight_lookup`, `youtube_extract`, `tiktok_extract`
 - [x] `vision-scan` is a separate synchronous endpoint — not in the async job queue (Steps 9 and 15)
 - [x] Scoping validation for `in_the_bag_suggest` is enforced in the Edge Function (Step 6): `trip_day_id` NULL assertion before every insert; non-compliant rows discarded and logged
 - [x] Error handling in every handler: `markJobFailed` called on any thrown error; job never left in `processing` state without resolution
@@ -500,3 +563,26 @@ This is NOT an async job. It is called directly from the app during document upl
 - [x] Gemini prompt templates are explicit and include no-emoji instruction in all prompts that produce user-visible text
 - [x] App-side loading states wired for each async feature (Steps 12, 13, 14)
 - [x] Plans 1 (database) and 2 (trip/event creation) are assumed complete; this plan hooks into their save handlers without recreating them
+- [x] Dispatcher authenticates callers via user JWT or service-role key, and authorises that `job.user_id` matches the authenticated user (Step 2)
+- [x] vision-scan validates a user JWT via `supabaseAdmin.auth.getUser(token)` before processing any image — anon key alone is not accepted (Step 9)
+
+---
+
+## Review Fixes Applied
+
+The following targeted fixes were applied to this plan after initial review:
+
+**C1 — youtube_extract and tiktok_extract handlers added**
+- Added `'youtube_extract'` and `'tiktok_extract'` to the `JobType` union in Step 1 (shared types).
+- Added both types to the dispatcher switch statement description in Step 2.
+- Added new **Step 8b** with full handler specs for both functions: Gemini 2.5 Pro prompt to extract named places/activities/restaurants/hotels/tips with timestamps; output written to `async_jobs.output` as `{ items: [...] }`; app-side wiring via `queueJob` on URL submit in the Explore screen "Enhance My Trip" input; Realtime listener drives checklist rendering.
+- Updated self-review checklist from "7 async job types" to "9 async job types" with all 9 listed.
+
+**M3 — vision-scan JWT validation**
+- Step 9 auth check updated from "verify anon key is present" to "validate a signed Supabase user JWT via `supabaseAdmin.auth.getUser(token)`"; includes explanation that the anon key is public and must not be accepted as sole authentication.
+
+**M5 — Dispatcher authenticates and authorises callers**
+- Step 2 dispatcher spec updated to: (a) verify the Authorization header token is a valid user JWT or the service-role key; (b) after fetching the job row, verify `job.user_id === authenticatedUser.id` when called with a user JWT; reject with 401/403 respectively on failure.
+
+**M8 — pre_trip_checklist_generate prompt no-emoji instruction**
+- Added explicit sentence "Do not use emojis anywhere in your response." to the Gemini prompt body in Step 4, immediately before the closing "Return only the JSON array" instruction.
