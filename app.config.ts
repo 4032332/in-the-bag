@@ -11,6 +11,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: 'app.inthebag',
     supportsTablet: false,
   },
+  android: {
+    intentFilters: [
+      {
+        action: 'VIEW',
+        data: [{ scheme: 'inthebag', host: 'invite' }],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
+  },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
