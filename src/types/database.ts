@@ -289,3 +289,115 @@ export interface Database {
     Enums: Record<string, never>;
   };
 }
+
+export interface Trip {
+  id: string;
+  owner_user_id: string;
+  name: string;
+  cover_photo_url: string | null;
+  is_cruise: boolean;
+  cruise_details: Record<string, unknown> | null;
+  treasure_map_image_url: string | null;
+  treasure_map_layout: Record<string, unknown> | null;
+  display_style: 'tiles' | 'stacked' | 'treasure_map';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TripDestination {
+  id: string;
+  trip_id: string;
+  city: string;
+  country: string;
+  start_date: string;
+  end_date: string;
+  display_order: number;
+}
+
+export interface TripDay {
+  id: string;
+  trip_id: string;
+  day_number: number;
+  date: string;
+}
+
+export interface TripParticipant {
+  id: string;
+  trip_id: string;
+  user_id: string | null;
+  guest_profile_id: string | null;
+  is_premium_sponsor: boolean;
+}
+
+export type EventCategory =
+  | 'transport_air'
+  | 'transport_road'
+  | 'transport_rail'
+  | 'transport_water'
+  | 'accommodation'
+  | 'activity'
+  | 'meal'
+  | 'rest'
+  | 'health'
+  | 'free_time'
+  | 'shore_excursion';
+
+export interface Event {
+  id: string;
+  trip_day_id: string;
+  trip_id: string;
+  category: EventCategory;
+  subcategory: string | null;
+  title: string;
+  start_time: string | null;
+  end_time: string | null;
+  address: string | null;
+  contact_name: string | null;
+  contact_phone: string | null;
+  contact_email: string | null;
+  confirmation_number: string | null;
+  reservation_details: string | null;
+  notes: string | null;
+  ai_generated: boolean;
+  linked_transport_event_id: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TripTask {
+  id: string;
+  trip_id: string;
+  title: string;
+  category: string | null;
+  is_completed: boolean;
+  is_suggested: boolean;
+  is_dismissed: boolean;
+  snoozed_until: string | null;
+  source: 'user' | 'ai';
+  created_at: string;
+}
+
+export interface MilestoneBannerState {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  banner_key: 'insurance_30d' | 'visa_14d' | 'esim_7d' | 'offline_docs_7d' | 'wifi_day_of';
+  dismissed_at: string | null;
+  resurface_at: string | null;
+  action_taken: 'confirm' | 'dismiss' | 'save_now' | null;
+}
+
+export interface AsyncJob {
+  id: string;
+  type: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  input: Record<string, unknown>;
+  output: Record<string, unknown> | null;
+  trip_id: string | null;
+  event_id: string | null;
+  user_id: string;
+  created_at: string;
+  completed_at: string | null;
+  error: string | null;
+}
