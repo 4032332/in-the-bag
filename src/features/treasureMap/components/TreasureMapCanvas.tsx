@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, Path, Skia } from '@shopify/react-native-skia';
-import Animated, { runOnJS } from 'react-native-reanimated';
+import Animated, { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
 import { StyleSheet, View } from 'react-native';
 import { TreasureMapLayout, TileLayout } from '../layoutTypes';
 import { ParchmentBackground } from './ParchmentBackground';
@@ -42,12 +42,10 @@ export function TreasureMapCanvas({
   const currentTierRef = useRef<ZoomTier>(computeTier(ZOOM_DEFAULT));
   const [zoomTier, setZoomTier] = useState<ZoomTier>('full');
 
-  // Fix C4: Use onChange on the pinch gesture to update the zoomTier reactively.
-  // We can attach this to the composed gesture or intercept it from scale via useAnimatedReaction,
-  // but the easiest way is to useAnimatedReaction on the scale value from useTreasureMapGestures.
-  Animated.useAnimatedReaction(
+  // Fix C4: Use useAnimatedReaction on the scale shared value to update the zoomTier reactively.
+  useAnimatedReaction(
     () => scale.value,
-    (currentScale) => {
+    (currentScale: number) => {
       const tier = computeTier(currentScale);
       if (tier !== currentTierRef.current) {
         currentTierRef.current = tier;
