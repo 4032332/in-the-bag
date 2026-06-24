@@ -48,3 +48,25 @@ Return only the JSON array. No markdown fences, no explanation.`;
     await markJobFailed(job.id, err.message);
   }
 }
+
+Deno.serve(async (req) => {
+  try {
+    const { jobId } = await req.json();
+    if (!jobId) {
+      return new Response(JSON.stringify({ error: 'Missing jobId' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+    const { data: job, error } = await supabaseAdmin
+      .from('async_jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
+    if (error || !job) {
+      return new Response(JSON.stringify({ error: 'Job not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    }
+    await handleJob(job as AsyncJob);
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
+});
