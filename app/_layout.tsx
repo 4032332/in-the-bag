@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { MMKV } from 'react-native-mmkv';
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import { AuthProvider } from '../src/providers/AuthProvider';
 import { DemoModeProvider } from '../src/providers/DemoModeProvider';
 import { DemoBanner } from '../src/components/DemoBanner';
@@ -19,9 +20,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <AuthProvider>
         <DemoModeProvider>
-          <DemoBanner />
-          <Stack screenOptions={{ headerShown: false }} />
-          <StatusBar style="auto" />
+          <ActionSheetProvider>
+            <DemoBanner />
+            <Stack screenOptions={{ headerShown: false }} />
+            <StatusBar style="auto" />
+          </ActionSheetProvider>
         </DemoModeProvider>
       </AuthProvider>
     </GestureHandlerRootView>

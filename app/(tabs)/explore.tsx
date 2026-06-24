@@ -1,14 +1,23 @@
-import { View, Text, StyleSheet } from 'react-native';
-export default function ExploreScreen() {
+import React from 'react';
+import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDemoMode } from '@/hooks/useDemoMode';
+import ExploreScreen from '@/components/explore/ExploreScreen';
+import UpgradePrompt from '@/components/common/UpgradePrompt';
+
+export default function ExploreTab() {
+  const { isDemoMode, demoTier } = useDemoMode();
+  const insets = useSafeAreaInsets();
+
+  const hasAccess = isDemoMode ? demoTier === 'premium' : false;
+
+  if (!hasAccess) {
+    return <UpgradePrompt feature="explore" />;
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Explore</Text>
-      <Text style={styles.empty}>AI-powered holiday planning — available to Premium members.</Text>
+    <View style={{ flex: 1, paddingTop: insets.top }}>
+      <ExploreScreen />
     </View>
   );
 }
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#fff' },
-  title: { fontSize: 28, fontWeight: '700' },
-  empty: { fontSize: 15, color: '#888', textAlign: 'center', paddingHorizontal: 32 },
-});
