@@ -1,0 +1,204 @@
+<h2>Treasure Map Display Mode</h2>
+<p class="subtitle">AI-generated hand-drawn map as background, with event tiles connected by dotted lines in chronological order. This is a Japan trip example.</p>
+
+<div style="display:flex;gap:40px;justify-content:center;flex-wrap:wrap;margin-top:24px;align-items:flex-start">
+
+  <!-- Phone mockup -->
+  <div style="text-align:center">
+    <div style="display:inline-block;border-radius:40px;padding:4px;border:3px solid #4f46e5">
+      <div style="width:270px;height:540px;background:#111;border-radius:36px;padding:10px;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
+        <!-- Status bar -->
+        <div style="height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:#888;font-size:9px;font-family:system-ui">
+          <span>9:41</span><span style="letter-spacing:1px">... .....</span>
+        </div>
+        <!-- App shell -->
+        <div style="border-radius:28px;height:calc(100% - 28px);overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+          <!-- Nav bar -->
+          <div style="background:rgba(20,15,10,0.92);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(139,109,56,0.4);z-index:10;position:relative">
+            <span style="color:#c4a265;font-size:10px;font-family:system-ui;font-weight:600">Back</span>
+            <span style="color:#f5e6c8;font-size:11px;font-weight:700;font-family:Georgia,serif;letter-spacing:0.5px">Japan — 7 Days</span>
+            <span style="color:#c4a265;font-size:10px;font-family:system-ui">Settings</span>
+          </div>
+
+          <!-- Main map area -->
+          <div style="flex:1;position:relative;overflow:hidden;background:#d4b896">
+
+            <!-- Parchment background texture via layered gradients -->
+            <div style="position:absolute;inset:0;background:
+              radial-gradient(ellipse at 20% 30%, rgba(180,140,80,0.3) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 70%, rgba(160,120,60,0.25) 0%, transparent 45%),
+              radial-gradient(ellipse at 50% 50%, rgba(212,184,150,1) 0%, rgba(195,160,110,1) 100%)
+            "></div>
+
+            <!-- Hand-drawn map elements (SVG) -->
+            <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 270 420" xmlns="http://www.w3.org/2000/svg">
+              <!-- Aged paper texture lines -->
+              <line x1="0" y1="80" x2="270" y2="78" stroke="rgba(139,100,40,0.08)" stroke-width="0.5"/>
+              <line x1="0" y1="160" x2="270" y2="163" stroke="rgba(139,100,40,0.07)" stroke-width="0.5"/>
+              <line x1="0" y1="240" x2="270" y2="238" stroke="rgba(139,100,40,0.08)" stroke-width="0.5"/>
+              <line x1="0" y1="320" x2="270" y2="322" stroke="rgba(139,100,40,0.07)" stroke-width="0.5"/>
+
+              <!-- Mount Fuji sketch (top right) -->
+              <g opacity="0.18" transform="translate(170,8)">
+                <polyline points="0,55 22,20 30,12 38,20 60,55" fill="none" stroke="#5c3d1a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="18,30 30,22 42,30" fill="none" stroke="#5c3d1a" stroke-width="1" stroke-linecap="round"/>
+                <!-- Snow cap hatch -->
+                <line x1="25" y1="18" x2="22" y2="24" stroke="#5c3d1a" stroke-width="0.8"/>
+                <line x1="30" y1="14" x2="27" y2="22" stroke="#5c3d1a" stroke-width="0.8"/>
+                <line x1="35" y1="18" x2="38" y2="24" stroke="#5c3d1a" stroke-width="0.8"/>
+              </g>
+
+              <!-- Temple sketch (bottom left) -->
+              <g opacity="0.16" transform="translate(12,310)">
+                <rect x="5" y="20" width="30" height="22" fill="none" stroke="#5c3d1a" stroke-width="1.2"/>
+                <polyline points="0,20 20,8 40,20" fill="none" stroke="#5c3d1a" stroke-width="1.2" stroke-linejoin="round"/>
+                <polyline points="3,12 20,2 37,12" fill="none" stroke="#5c3d1a" stroke-width="1" stroke-linejoin="round"/>
+                <line x1="20" y1="20" x2="20" y2="42" stroke="#5c3d1a" stroke-width="1"/>
+                <line x1="5" y1="30" x2="35" y2="30" stroke="#5c3d1a" stroke-width="0.8"/>
+              </g>
+
+              <!-- Cherry blossom tree (mid left) -->
+              <g opacity="0.15" transform="translate(8,160)">
+                <line x1="15" y1="50" x2="15" y2="20" stroke="#5c3d1a" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="15" y1="35" x2="5" y2="25" stroke="#5c3d1a" stroke-width="1" stroke-linecap="round"/>
+                <line x1="15" y1="30" x2="25" y2="22" stroke="#5c3d1a" stroke-width="1" stroke-linecap="round"/>
+                <circle cx="15" cy="14" r="10" fill="none" stroke="#5c3d1a" stroke-width="1"/>
+                <circle cx="7" cy="20" r="6" fill="none" stroke="#5c3d1a" stroke-width="1"/>
+                <circle cx="23" cy="18" r="7" fill="none" stroke="#5c3d1a" stroke-width="1"/>
+              </g>
+
+              <!-- Torii gate (top left) -->
+              <g opacity="0.16" transform="translate(15,30)">
+                <line x1="0" y1="30" x2="40" y2="30" stroke="#5c3d1a" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="4" y1="24" x2="36" y2="24" stroke="#5c3d1a" stroke-width="1.2" stroke-linecap="round"/>
+                <line x1="8" y1="24" x2="8" y2="50" stroke="#5c3d1a" stroke-width="1.2" stroke-linecap="round"/>
+                <line x1="32" y1="24" x2="32" y2="50" stroke="#5c3d1a" stroke-width="1.2" stroke-linecap="round"/>
+                <line x1="-3" y1="30" x2="3" y2="24" stroke="#5c3d1a" stroke-width="1" stroke-linecap="round"/>
+                <line x1="43" y1="30" x2="37" y2="24" stroke="#5c3d1a" stroke-width="1" stroke-linecap="round"/>
+              </g>
+
+              <!-- Wave/water elements (bottom) -->
+              <g opacity="0.12" transform="translate(100,370)">
+                <path d="M0,10 Q8,2 16,10 Q24,18 32,10 Q40,2 48,10" fill="none" stroke="#5c3d1a" stroke-width="1.2" stroke-linecap="round"/>
+                <path d="M0,18 Q8,10 16,18 Q24,26 32,18 Q40,10 48,18" fill="none" stroke="#5c3d1a" stroke-width="1" stroke-linecap="round"/>
+              </g>
+
+              <!-- Dotted path connecting events -->
+              <!-- Day 1 to Day 2 -->
+              <line x1="80" y1="72" x2="155" y2="110" stroke="#8b5e1a" stroke-width="1.5" stroke-dasharray="4,4" stroke-linecap="round" opacity="0.7"/>
+              <!-- Day 2 to Day 3 -->
+              <line x1="155" y1="148" x2="75" y2="195" stroke="#8b5e1a" stroke-width="1.5" stroke-dasharray="4,4" stroke-linecap="round" opacity="0.7"/>
+              <!-- Day 3 to Day 4 -->
+              <line x1="75" y1="233" x2="165" y2="278" stroke="#8b5e1a" stroke-width="1.5" stroke-dasharray="4,4" stroke-linecap="round" opacity="0.7"/>
+              <!-- Day 4 to Day 5 -->
+              <line x1="165" y1="316" x2="85" y2="355" stroke="#8b5e1a" stroke-width="1.5" stroke-dasharray="4,4" stroke-linecap="round" opacity="0.7"/>
+
+              <!-- Small compass rose (bottom right) -->
+              <g opacity="0.22" transform="translate(225,370)">
+                <circle cx="16" cy="16" r="14" fill="none" stroke="#5c3d1a" stroke-width="1"/>
+                <line x1="16" y1="4" x2="16" y2="28" stroke="#5c3d1a" stroke-width="1"/>
+                <line x1="4" y1="16" x2="28" y2="16" stroke="#5c3d1a" stroke-width="1"/>
+                <polygon points="16,4 13,12 19,12" fill="#5c3d1a" opacity="0.6"/>
+                <text x="14" y="3" font-size="5" fill="#5c3d1a" font-family="Georgia,serif">N</text>
+              </g>
+            </svg>
+
+            <!-- EVENT TILES overlaid on map -->
+            <!-- DAY 1 -->
+            <div style="position:absolute;top:18px;left:42px;width:80px">
+              <div style="background:rgba(20,12,5,0.82);border:1px solid rgba(196,162,101,0.6);border-radius:6px;padding:5px 6px;backdrop-filter:blur(2px)">
+                <div style="color:#c4a265;font-size:6px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.5px;border-bottom:1px solid rgba(196,162,101,0.3);padding-bottom:2px;margin-bottom:3px">DAY 1 — MON 14/7</div>
+                <div style="color:#f5e6c8;font-size:7px;font-family:system-ui;font-weight:600">Arrive Tokyo</div>
+                <div style="color:#a89070;font-size:6px;font-family:system-ui;margin-top:1px">Flight · Hotel Check-in</div>
+              </div>
+            </div>
+
+            <!-- DAY 2 -->
+            <div style="position:absolute;top:94px;left:115px;width:88px">
+              <div style="background:rgba(20,12,5,0.82);border:1px solid rgba(196,162,101,0.6);border-radius:6px;padding:5px 6px;backdrop-filter:blur(2px)">
+                <div style="color:#c4a265;font-size:6px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.5px;border-bottom:1px solid rgba(196,162,101,0.3);padding-bottom:2px;margin-bottom:3px">DAY 2 — TUE 15/7</div>
+                <div style="color:#f5e6c8;font-size:7px;font-family:system-ui;font-weight:600">Shibuya & Harajuku</div>
+                <div style="color:#a89070;font-size:6px;font-family:system-ui;margin-top:1px">Sightseeing · Meal · Show</div>
+              </div>
+            </div>
+
+            <!-- DAY 3 -->
+            <div style="position:absolute;top:176px;left:36px;width:88px">
+              <div style="background:rgba(20,12,5,0.82);border:1px solid rgba(196,162,101,0.6);border-radius:6px;padding:5px 6px;backdrop-filter:blur(2px)">
+                <div style="color:#c4a265;font-size:6px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.5px;border-bottom:1px solid rgba(196,162,101,0.3);padding-bottom:2px;margin-bottom:3px">DAY 3 — WED 16/7</div>
+                <div style="color:#f5e6c8;font-size:7px;font-family:system-ui;font-weight:600">Kyoto Day Trip</div>
+                <div style="color:#a89070;font-size:6px;font-family:system-ui;margin-top:1px">Rail · Temple · Meal</div>
+              </div>
+            </div>
+
+            <!-- DAY 4 -->
+            <div style="position:absolute;top:258px;left:118px;width:88px">
+              <div style="background:rgba(20,12,5,0.82);border:1px solid rgba(196,162,101,0.6);border-radius:6px;padding:5px 6px;backdrop-filter:blur(2px)">
+                <div style="color:#c4a265;font-size:6px;font-family:Georgia,serif;font-weight:700;letter-spacing:0.5px;border-bottom:1px solid rgba(196,162,101,0.3);padding-bottom:2px;margin-bottom:3px">DAY 4 — THU 17/7</div>
+                <div style="color:#f5e6c8;font-size:7px;font-family:system-ui;font-weight:600">Mt Fuji & Hakone</div>
+                <div style="color:#a89070;font-size:6px;font-family:system-ui;margin-top:1px">Sightseeing · Ryokan</div>
+              </div>
+            </div>
+
+            <!-- DAY 5 -->
+            <div style="position:absolute;top:335px;left:38px;width:88px">
+              <div style="background:rgba(20,12,5,0.82);border:1px solid rgba(196,162,101,0.6);border-radius:6px;padding:5px 6px;backdrop-filter:blur(2px)">
+                <div style="color:#c4a265;font-size:6px;font-family:Georgia,serif;font-width:700;letter-spacing:0.5px;border-bottom:1px solid rgba(196,162,101,0.3);padding-bottom:2px;margin-bottom:3px">DAY 5 — FRI 18/7</div>
+                <div style="color:#f5e6c8;font-size:7px;font-family:system-ui;font-weight:600">Akihabara & Ueno</div>
+                <div style="color:#a89070;font-size:6px;font-family:system-ui;margin-top:1px">Sightseeing · Exhibition</div>
+              </div>
+            </div>
+
+            <!-- Backpack floating button -->
+            <div style="position:absolute;bottom:12px;right:12px;width:30px;height:30px;background:rgba(20,12,5,0.88);border:1px solid rgba(196,162,101,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.4)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4a265" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 20V10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>
+                <path d="M9 6V5a3 3 0 0 1 6 0v1"/>
+                <line x1="12" y1="12" x2="12" y2="16"/>
+                <line x1="10" y1="14" x2="14" y2="14"/>
+              </svg>
+            </div>
+
+          </div>
+
+          <!-- Bottom tab bar -->
+          <div style="background:rgba(20,12,5,0.95);border-top:1px solid rgba(139,109,56,0.4);padding:6px 0 3px;display:flex;justify-content:space-around;align-items:center">
+            <div style="text-align:center"><div style="color:#c4a265;font-size:9px;font-family:Georgia,serif">Home</div></div>
+            <div style="text-align:center"><div style="color:#6b5535;font-size:9px;font-family:Georgia,serif">Explore</div></div>
+            <div style="background:#8b5e1a;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-top:-6px;box-shadow:0 4px 12px rgba(139,94,26,0.5)"><div style="color:#f5e6c8;font-size:16px;line-height:1;font-family:system-ui">+</div></div>
+            <div style="text-align:center"><div style="color:#6b5535;font-size:9px;font-family:Georgia,serif">Profile</div></div>
+            <div style="text-align:center"><div style="color:#6b5535;font-size:9px;font-family:Georgia,serif">Settings</div></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text-secondary);font-family:system-ui;margin:10px 0 0;max-width:270px;text-align:left">In the real app, the background is an AI-generated Imagen 3 illustration themed to the destination. The tiles and dotted path are overlaid on top. Tapping a tile opens that day.</p>
+  </div>
+
+  <!-- Notes panel -->
+  <div style="max-width:280px">
+    <div class="section">
+      <h3>What you're seeing</h3>
+      <ul style="font-family:system-ui;font-size:13px;color:var(--text-secondary);line-height:1.7;padding-left:18px;margin:0">
+        <li>Parchment-toned background with hand-drawn Japanese landmarks (Mt Fuji, Torii gate, temple, cherry blossoms)</li>
+        <li>Each day is a dark tile with a gold border, showing day number, date, and a summary of events</li>
+        <li>Dotted lines connect days in chronological order, snaking across the map</li>
+        <li>The backpack icon (bottom right) floats over the map to open "In the Bag"</li>
+        <li>Tapping a day tile drills into that day's events</li>
+        <li>A compass rose sits in the corner for authenticity</li>
+      </ul>
+    </div>
+    <div class="section" style="margin-top:20px">
+      <h3>In the real app</h3>
+      <ul style="font-family:system-ui;font-size:13px;color:var(--text-secondary);line-height:1.7;padding-left:18px;margin:0">
+        <li>Gemini Imagen 3 generates the background based on the destination (e.g. pirate map for Hawaii, samurai map for Japan)</li>
+        <li>The map style and colour palette adapt to the destination theme</li>
+        <li>Days can be expanded to show individual events within the map view</li>
+        <li>Premium feature only</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
