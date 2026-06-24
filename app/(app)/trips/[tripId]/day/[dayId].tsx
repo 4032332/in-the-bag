@@ -6,6 +6,9 @@ import { listEventsForDay } from '../../../../../src/services/events';
 import { EventList } from '../../../../../src/components/events/EventList';
 import { DisplayStyleToggle } from '../../../../../src/components/common/DisplayStyleToggle';
 import { storage } from '../../../../../src/lib/mmkv';
+import { BackpackFAB } from '../../../../../src/components/in-the-bag/BackpackFAB';
+import { InTheBagSheet } from '../../../../../src/components/in-the-bag/InTheBagSheet';
+import { useDemoMode } from '../../../../../src/hooks/useDemoMode';
 
 interface DayViewProps {
   tripDayId: string;
@@ -17,6 +20,10 @@ interface DayViewProps {
 export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: DayViewProps) {
   const savedStyle = (storage.getString(`trip_display_style_${tripId}`) as 'tiles' | 'stacked') ?? 'tiles';
   const [displayStyle, setDisplayStyle] = useState<'tiles' | 'stacked'>(savedStyle);
+
+  const { demoTier } = useDemoMode();
+  const isPremium = demoTier === 'premium';
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     const saved = storage.getString(`trip_display_style_${tripId}`) as 'tiles' | 'stacked' | undefined;
@@ -46,6 +53,22 @@ export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: D
         )}
       </View>
       <EventList events={events} displayStyle={displayStyle} tripId={tripId} tripDayId={tripDayId} isReadOnly={isReadOnly} />
+      <BackpackFAB
+        onPress={() => setSheetOpen(true)}
+        position={{ bottom: 100, right: 20 }}
+      />
+      <InTheBagSheet
+        scope={{
+          kind: 'day',
+          tripId,
+          tripDayId,
+          events: events.map((e) => ({ id: e.id, title: e.title ?? '' })),
+          isPremium,
+        }}
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onUpgradePress={() => {}}
+      />
     </View>
   );
 }
@@ -57,7 +80,7 @@ export default function DayScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, position: 'relative' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#eee' },
   addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#007AFF', justifyContent: 'center', alignItems: 'center' },
   addBtnText: { color: '#fff', fontSize: 22, fontWeight: '300', lineHeight: 28 },

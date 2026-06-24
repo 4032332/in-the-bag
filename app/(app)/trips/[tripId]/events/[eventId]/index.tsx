@@ -17,6 +17,8 @@ import { EventDetailSheet } from '../../../../../../src/components/sheets/EventD
 import { AddTransportInlineSheet } from '../../../../../../src/components/sheets/AddTransportInlineSheet';
 import { useDemoMode } from '../../../../../../src/hooks/useDemoMode';
 import { EventDetailsTab } from './details';
+import { BackpackFAB } from '../../../../../../src/components/in-the-bag/BackpackFAB';
+import { InTheBagSheet } from '../../../../../../src/components/in-the-bag/InTheBagSheet';
 
 type EventTab = 'details' | 'inTheBag' | 'documents' | 'tickets';
 
@@ -39,6 +41,7 @@ export default function EventScreen() {
   const [activeTab, setActiveTab] = useState<EventTab>('details');
   const [showEditSheet, setShowEditSheet] = useState(false);
   const [showTransportSheet, setShowTransportSheet] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -162,12 +165,29 @@ export default function EventScreen() {
           loadEvent();
         }}
       />
+      <BackpackFAB
+        onPress={() => setSheetOpen(true)}
+        position={{ bottom: 100, right: 20 }}
+      />
+      <InTheBagSheet
+        scope={{
+          kind: 'event',
+          tripId: tripId!,
+          eventId: event.id,
+          eventTitle: event.title ?? 'Event',
+          isPremium,
+          aiJobStatus: 'idle',
+        }}
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onUpgradePress={() => {}}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#fff', position: 'relative' },
   loader: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   headerActions: {
