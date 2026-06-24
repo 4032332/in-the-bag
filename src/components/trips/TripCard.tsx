@@ -6,9 +6,10 @@ import { format, parseISO } from 'date-fns';
 
 interface Props {
   trip: Trip & { trip_destinations: TripDestination[]; trip_participants: TripParticipant[] };
+  onPress?: () => void;
 }
 
-export function TripCard({ trip }: Props) {
+export function TripCard({ trip, onPress }: Props) {
   const router = useRouter();
   const sortedDests = [...trip.trip_destinations].sort((a, b) => a.display_order - b.display_order);
   const firstDest = sortedDests[0];
@@ -20,7 +21,7 @@ export function TripCard({ trip }: Props) {
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => router.push(`/trips/${trip.id}` as any)}
+      onPress={onPress ?? (() => router.push(`/trips/${trip.id}` as any))}
       accessibilityRole="button"
       accessibilityLabel={`Open trip ${trip.name}`}
     >
