@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { Trip, TripDestination, TripParticipant } from '../../types/database';
 import { format, parseISO } from 'date-fns';
 
 interface Props {
   trip: Trip & { trip_destinations: TripDestination[]; trip_participants: TripParticipant[] };
+  isLoading?: boolean;
 }
 
-export function CoverPhotoHeader({ trip }: Props) {
+export function CoverPhotoHeader({ trip, isLoading = false }: Props) {
   const [coverUrl, setCoverUrl] = useState<string | null>(trip.cover_photo_url);
 
   useEffect(() => {
@@ -36,7 +37,11 @@ export function CoverPhotoHeader({ trip }: Props) {
         <Image source={{ uri: coverUrl }} style={styles.photo} />
       ) : (
         <View style={[styles.photo, styles.placeholder]}>
-          <Text style={styles.placeholderText}>{trip.name[0]?.toUpperCase() ?? 'T'}</Text>
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#fff" />
+          ) : (
+            <Text style={styles.placeholderText}>{trip.name[0]?.toUpperCase() ?? 'T'}</Text>
+          )}
         </View>
       )}
       <View style={styles.overlay}>
