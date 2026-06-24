@@ -72,15 +72,15 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={styles.root}>
-      <ActionSheetProvider>
-        <AuthProvider>
-          <DemoModeProvider>
+      <AuthProvider>
+        <DemoModeProvider>
+          <ActionSheetProvider>
             <DemoBanner />
             <Stack screenOptions={{ headerShown: false }} />
             <StatusBar style="auto" />
-          </DemoModeProvider>
-        </AuthProvider>
-      </ActionSheetProvider>
+          </ActionSheetProvider>
+        </DemoModeProvider>
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 }

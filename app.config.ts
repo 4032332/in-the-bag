@@ -25,4 +25,5 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     demoModeEnabled: process.env.DEMO_MODE_ENABLED === 'true',
   },
+  plugins: ['expo-asset'],
 });
