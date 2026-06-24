@@ -16,9 +16,10 @@ interface Props {
   events: EventMeta[];
   isPremium: boolean;
   onUpgradePress: () => void;
+  aiJobStatus?: 'idle' | 'loading' | 'complete';
 }
 
-export function DayLevelView({ tripId, tripDayId, events, isPremium, onUpgradePress }: Props) {
+export function DayLevelView({ tripId, tripDayId, events, isPremium, onUpgradePress, aiJobStatus = 'idle' }: Props) {
   const eventIds = useMemo(() => events.map((e) => e.id), [events]);
   const { eventItems, dayItems, loading } = useDayItems(tripId, tripDayId, eventIds);
 

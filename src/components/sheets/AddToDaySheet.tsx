@@ -14,12 +14,13 @@ import { useForm } from 'react-hook-form';
 import { EventCategory } from '../../types/database';
 import { countEventsForDay, createEvent } from '../../services/events';
 import { isDayAtCap } from '../../lib/freeTierCap';
-import { enqueueJob } from '../../lib/asyncJobQueue';
+import { queueJob } from '../../../app/lib/jobs/queue';
 import { getEventFields } from '../../lib/eventFieldConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { CategoryPicker } from '../events/CategoryPicker';
 import { SubcategoryPicker, hasSubcategories } from '../events/SubcategoryPicker';
 import { EventDetailFields } from '../events/EventDetailFields';
+import { useAsyncJob } from '../../../app/hooks/useAsyncJob';
 
 type SheetStep = 'loading' | 'category' | 'subcategory' | 'detail' | 'upgrade_prompt';
 
@@ -50,13 +51,50 @@ export function AddToDaySheet({
   const [step, setStep] = useState<SheetStep>('loading');
   const [category, setCategory] = useState<EventCategory | null>(null);
   const [subcategory, setSubcategory] = useState<string | null>(null);
+  const [flightJobId, setFlightJobId] = useState<string | null>(null);
 
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<Record<string, string>>();
+
+  const { job: flightJob, isLoading: flightLoading } = useAsyncJob(flightJobId);
+
+  useEffect(() => {
+    if (flightJob?.status === 'completed' && flightJob.output) {
+      const { airline, origin_airport, destination_airport, scheduled_departure, scheduled_arrival } = flightJob.output as any;
+      if (airline) setValue('airline', airline);
+      if (scheduled_departure) setValue('start_time', new Date(scheduled_departure).toISOString().substring(11, 16));
+      if (scheduled_arrival) setValue('end_time', new Date(scheduled_arrival).toISOString().substring(11, 16));
+      if (destination_airport) {
+        setValue('title', `Flight to ${destination_airport}`);
+      }
+      setFlightJobId(null);
+    } else if (flightJob?.status === 'failed') {
+      Alert.alert('Lookup failed', flightJob.error || 'Could not find flight details.');
+      setFlightJobId(null);
+    }
+  }, [flightJob?.status]);
+
+  async function handleLookupFlight(flightNumber: string) {
+    if (!user) return;
+    try {
+      const { supabase } = require('../../lib/supabase');
+      const { data } = await supabase.from('trip_days').select('date').eq('id', tripDayId).single();
+      const date = data?.date || new Date().toISOString().split('T')[0];
+      const jobId = await queueJob({
+        type: 'flight_lookup',
+        input: { flight_number: flightNumber, flight_date: date },
+        userId: user.id
+      });
+      setFlightJobId(jobId);
+    } catch {
+      Alert.alert('Error', 'Failed to queue flight lookup.');
+    }
+  }
 
   function resetState() {
     setStep('loading');
@@ -138,13 +176,23 @@ export function AddToDaySheet({
       });
 
       if (isPremium && !isDemoMode) {
-        await enqueueJob({
+        const jobId = await queueJob({
           type: 'in_the_bag_suggest',
           input: { event_id: newEvent.id, trip_id: tripId, trip_day_id: tripDayId },
-          event_id: newEvent.id,
-          trip_id: tripId,
-          user_id: user.id,
+          eventId: newEvent.id,
+          tripId: tripId,
+          userId: user.id,
         });
+        
+        // Store in MMKV
+        const storage = new (require('react-native-mmkv').MMKV)();
+        storage.set(`job_bag_event_${newEvent.id}`, jobId);
+        
+        // Also keep track of events created on this day so DayView can check them
+        const dayJobsRaw = storage.getString(`day_bag_jobs_${tripDayId}`);
+        const dayJobs = dayJobsRaw ? JSON.parse(dayJobsRaw) : [];
+        dayJobs.push(jobId);
+        storage.set(`day_bag_jobs_${tripDayId}`, JSON.stringify(dayJobs));
       }
 
       reset();
@@ -260,6 +308,8 @@ export function AddToDaySheet({
               control={control}
               errors={errors}
               dietaryReminder={dietaryReminder}
+              onLookupFlight={handleLookupFlight}
+              flightLookupLoading={flightLoading}
             />
           </ScrollView>
         ) : null}

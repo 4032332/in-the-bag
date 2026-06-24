@@ -9,6 +9,7 @@ import { storage } from '../../../../../src/lib/mmkv';
 import { BackpackFAB } from '../../../../../src/components/in-the-bag/BackpackFAB';
 import { InTheBagSheet } from '../../../../../src/components/in-the-bag/InTheBagSheet';
 import { useDemoMode } from '../../../../../src/hooks/useDemoMode';
+import { useAsyncJob } from '../../../../hooks/useAsyncJob';
 
 interface DayViewProps {
   tripDayId: string;
@@ -28,6 +29,12 @@ export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: D
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const [events, setEvents] = useState<Event[]>([]);
+
+  const dayJobsRaw = storage.getString(`day_bag_jobs_${tripDayId}`);
+  const dayJobs = dayJobsRaw ? JSON.parse(dayJobsRaw) : [];
+  const latestJobId = dayJobs.length > 0 ? dayJobs[dayJobs.length - 1] : null;
+
+  const { isLoading: aiLoading } = useAsyncJob(latestJobId);
 
   const loadEvents = useCallback(async () => {
     try {
@@ -62,6 +69,7 @@ export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: D
           tripDayId,
           events: events.map((e) => ({ id: e.id, title: e.title ?? '' })),
           isPremium,
+          aiJobStatus: aiLoading ? 'loading' : 'idle',
         }}
         isOpen={sheetOpen}
         onClose={() => setSheetOpen(false)}

@@ -9,6 +9,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { supabase } from '../../../../../../src/lib/supabase';
 import { Event } from '../../../../../../src/types/database';
 import { getEvent, deleteEvent } from '../../../../../../src/services/events';
 import { getTabVisibility } from '../../../../../../src/lib/eventTabVisibility';
@@ -84,6 +86,58 @@ export default function EventScreen() {
   if (loading) return <ActivityIndicator style={styles.loader} />;
   if (!event) return <View style={styles.center}><Text>Event not found.</Text></View>;
 
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scannedInitialValues, setScannedInitialValues] = useState<Record<string, string> | null>(null);
+
+  async function handleScan(documentType: 'document' | 'boarding_pass') {
+    if (!isPremium) {
+      Alert.alert('Premium feature', 'Please upgrade to scan documents.');
+      return;
+    }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        base64: true,
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets[0].base64) return;
+
+      setScanLoading(true);
+      const asset = result.assets[0];
+      const mimeType = asset.mimeType || 'image/jpeg';
+      
+      const { data, error } = await supabase.functions.invoke('vision-scan', {
+        body: { image_base64: asset.base64, mime_type: mimeType, document_type: documentType },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const parsedFields = data.fields || {};
+      const newInitialValues = {
+        title: parsedFields.title || event?.title || '',
+        start_time: parsedFields.check_in_time || parsedFields.departure_time || parsedFields.appointment_time || event?.start_time || '',
+        end_time: parsedFields.check_out_time || parsedFields.arrival_time || event?.end_time || '',
+        address: parsedFields.address || parsedFields.port || parsedFields.meeting_point || event?.address || '',
+        contact_name: parsedFields.passenger_name || parsedFields.provider_name || event?.contact_name || '',
+        contact_phone: parsedFields.contact_phone || event?.contact_phone || '',
+        contact_email: parsedFields.contact_email || event?.contact_email || '',
+        confirmation_number: parsedFields.booking_reference || parsedFields.confirmation_number || event?.confirmation_number || '',
+        reservation_details: parsedFields.airline || parsedFields.url || event?.reservation_details || '',
+        notes: (event?.notes ? event.notes + '\n\n' : '') + 'Extracted from scan:\n' + JSON.stringify(parsedFields, null, 2),
+      };
+
+      setScannedInitialValues(newInitialValues);
+      setShowEditSheet(true);
+    } catch (e: any) {
+      Alert.alert('Scan Failed', e.message || 'Could not extract information.');
+    } finally {
+      setScanLoading(false);
+    }
+  }
+
   const visibility = getTabVisibility(event.category);
   const canAddTransport = !isReadOnly && TRANSPORT_ADDABLE_CATEGORIES.includes(event.category);
 
@@ -117,11 +171,17 @@ export default function EventScreen() {
         )}
         {activeTab === 'documents' && (
           <View style={styles.tabPlaceholder}>
+            <TouchableOpacity style={styles.scanBtn} onPress={() => handleScan('document')} disabled={scanLoading}>
+              {scanLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.scanBtnText}>Scan Document with AI</Text>}
+            </TouchableOpacity>
             <Text style={styles.placeholderText}>Documents will appear here.</Text>
           </View>
         )}
         {activeTab === 'tickets' && (
           <View style={styles.tabPlaceholder}>
+            <TouchableOpacity style={styles.scanBtn} onPress={() => handleScan('boarding_pass')} disabled={scanLoading}>
+              {scanLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.scanBtnText}>Scan Ticket with AI</Text>}
+            </TouchableOpacity>
             <Text style={styles.placeholderText}>Tickets will appear here.</Text>
           </View>
         )}
@@ -136,7 +196,7 @@ export default function EventScreen() {
         isPremium={isPremium}
         isDemoMode={isDemoMode}
         eventId={event.id}
-        initialValues={{
+        initialValues={scannedInitialValues || {
           title: event.title ?? '',
           start_time: event.start_time ?? '',
           end_time: event.end_time ?? '',
@@ -148,7 +208,10 @@ export default function EventScreen() {
           reservation_details: event.reservation_details ?? '',
           notes: event.notes ?? '',
         }}
-        onClose={() => setShowEditSheet(false)}
+        onClose={() => {
+          setShowEditSheet(false);
+          setScannedInitialValues(null);
+        }}
         onEventCreated={() => {
           setShowEditSheet(false);
           loadEvent();
@@ -207,4 +270,6 @@ const styles = StyleSheet.create({
   contentInner: { flexGrow: 1 },
   tabPlaceholder: { flex: 1, padding: 20 },
   placeholderText: { color: '#888', fontSize: 15, textAlign: 'center', marginTop: 40 },
+  scanBtn: { backgroundColor: '#007AFF', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 20 },
+  scanBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

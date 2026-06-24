@@ -12,7 +12,11 @@ import { format } from 'date-fns';
 import { createTrip, insertTripDestinations, insertTripParticipant } from '../../../src/services/trips';
 import { createTripDays } from '../../../src/services/tripDays';
 import { generateTripDays } from '../../../src/lib/tripDays';
-import { enqueueJob } from '../../../src/lib/asyncJobQueue';
+import { queueJob } from '../../lib/jobs/queue';
+import { supabase } from '../../../src/lib/supabase';
+import { MMKV } from 'react-native-mmkv';
+
+const storage = new MMKV();
 import { useAuth } from '../../../src/hooks/useAuth';
 import { useDemoMode } from '../../../src/hooks/useDemoMode';
 
@@ -100,12 +104,40 @@ export default function CreateTripScreen() {
       const days = generateTripDays(trip.id, overallStart, overallEnd);
       await createTripDays(trip.id, days);
 
-      await enqueueJob({ type: 'cover_photo_fetch', input: { trip_id: trip.id }, trip_id: trip.id, user_id: user.id });
+      const { data: userProfile } = await supabase.from('users').select('*').eq('id', user.id).single();
+
+      // Use the new queueJob from app/lib/jobs/queue
+      const coverPhotoJobId = await queueJob({ type: 'cover_photo_fetch', input: { trip_id: trip.id, destinations }, tripId: trip.id, userId: user.id });
+      storage.set(`job_cover_photo_${trip.id}`, coverPhotoJobId);
 
       if (isPremium) {
-        await enqueueJob({ type: 'pre_trip_checklist_generate', input: { trip_id: trip.id }, trip_id: trip.id, user_id: user.id });
-        await enqueueJob({ type: 'treasure_map_generate', input: { trip_id: trip.id }, trip_id: trip.id, user_id: user.id });
-        await enqueueJob({ type: 'in_the_bag_suggest', input: { trip_id: trip.id }, trip_id: trip.id, user_id: user.id });
+        const checklistJobId = await queueJob({ 
+          type: 'pre_trip_checklist_generate', 
+          input: { 
+            trip_id: trip.id, 
+            user_id: user.id,
+            destinations,
+            trip_start: overallStart,
+            trip_end: overallEnd,
+            citizenship_countries: userProfile?.citizenship_countries || [],
+            country_of_residency: userProfile?.country_of_residency || '',
+            medical_conditions: userProfile?.medical_conditions || null,
+            medications: userProfile?.medications || null,
+            food_allergies: userProfile?.food_allergies || null,
+            dietary_requirements: userProfile?.dietary_requirements || null,
+            disability_accessibility_needs: userProfile?.disability_accessibility_needs || null,
+            is_cruise: isCruise
+          }, 
+          tripId: trip.id, 
+          userId: user.id 
+        });
+        storage.set(`job_checklist_${trip.id}`, checklistJobId);
+
+        const mapJobId = await queueJob({ type: 'treasure_map_generate', input: { trip_id: trip.id, destinations, is_cruise: isCruise }, tripId: trip.id, userId: user.id });
+        storage.set(`job_map_${trip.id}`, mapJobId);
+
+        const bagJobId = await queueJob({ type: 'in_the_bag_suggest', input: { trip_id: trip.id, event_id: null, destinations, trip_start: overallStart, trip_end: overallEnd, medical_conditions: userProfile?.medical_conditions || null, dietary_requirements: userProfile?.dietary_requirements || null, disability_accessibility_needs: userProfile?.disability_accessibility_needs || null }, tripId: trip.id, userId: user.id });
+        storage.set(`job_bag_${trip.id}`, bagJobId);
       }
 
       router.replace(`/trips/${trip.id}` as any);
