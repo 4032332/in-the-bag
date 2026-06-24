@@ -49,7 +49,7 @@ export default function CreateTripScreen() {
   const [saving, setSaving] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState<{ destIndex: number; field: 'start_date' | 'end_date' } | null>(null);
 
-  const { control, handleSubmit, formState: { errors } } = useForm({
+  const { control, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(step1Schema),
     defaultValues: { name: tripName },
   });
@@ -187,7 +187,7 @@ export default function CreateTripScreen() {
             <Text style={styles.addDestBtnText}>+ Add another destination</Text>
           </TouchableOpacity>
           <View style={styles.row}>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={() => setStep(1)}>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={() => { reset({ name: tripName }); setStep(1); }}>
               <Text style={styles.secondaryBtnText}>Back</Text>
             </TouchableOpacity>
             <TouchableOpacity

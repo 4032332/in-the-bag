@@ -17,7 +17,10 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const loadTrips = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     setError(null);
     try {
       const data = await listActiveTrips(user.id);
