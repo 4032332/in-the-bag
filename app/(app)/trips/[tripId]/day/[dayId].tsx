@@ -18,17 +18,15 @@ interface DayViewProps {
 }
 
 export function DayView({ tripDayId, tripId, isReadOnly = false, onAddEvent }: DayViewProps) {
-  const savedStyle = (storage.getString(`trip_display_style_${tripId}`) as 'tiles' | 'stacked') ?? 'tiles';
-  const [displayStyle, setDisplayStyle] = useState<'tiles' | 'stacked'>(savedStyle);
+
+  const [displayStyle, setDisplayStyle] = useState<'tiles' | 'stacked'>(
+    () => (storage.getString(`trip_display_style_${tripId}`) as 'tiles' | 'stacked') ?? 'tiles'
+  );
 
   const { demoTier } = useDemoMode();
   const isPremium = demoTier === 'premium';
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  useEffect(() => {
-    const saved = storage.getString(`trip_display_style_${tripId}`) as 'tiles' | 'stacked' | undefined;
-    setDisplayStyle(saved ?? 'tiles');
-  }, [tripId]);
   const [events, setEvents] = useState<Event[]>([]);
 
   const loadEvents = useCallback(async () => {

@@ -70,7 +70,7 @@ export function AISuggestionsStub({ state, items = [], onUnlockPress }: Props) {
         </Pressable>
       )}
 
-      {state === 'ready' && items.length === 0 && (
+      {(state === 'ready' || state === 'empty') && items.length === 0 && (
         <Text style={styles.subtext}>No suggestions at this time.</Text>
       )}
 
