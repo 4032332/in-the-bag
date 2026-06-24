@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form';
 import { EventCategory } from '../../types/database';
 import { countEventsForDay, createEvent } from '../../services/events';
 import { isDayAtCap } from '../../lib/freeTierCap';
-import { enqueueJob } from '../../lib/asyncJobQueue';
+import { queueJob } from '../../app/lib/jobs/queue';
 import { getEventFields } from '../../lib/eventFieldConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { CategoryPicker } from '../events/CategoryPicker';
@@ -138,13 +138,23 @@ export function AddToDaySheet({
       });
 
       if (isPremium && !isDemoMode) {
-        await enqueueJob({
+        const jobId = await queueJob({
           type: 'in_the_bag_suggest',
           input: { event_id: newEvent.id, trip_id: tripId, trip_day_id: tripDayId },
-          event_id: newEvent.id,
-          trip_id: tripId,
-          user_id: user.id,
+          eventId: newEvent.id,
+          tripId: tripId,
+          userId: user.id,
         });
+        
+        // Store in MMKV
+        const storage = new (require('react-native-mmkv').MMKV)();
+        storage.set(`job_bag_event_${newEvent.id}`, jobId);
+        
+        // Also keep track of events created on this day so DayView can check them
+        const dayJobsRaw = storage.getString(`day_bag_jobs_${tripDayId}`);
+        const dayJobs = dayJobsRaw ? JSON.parse(dayJobsRaw) : [];
+        dayJobs.push(jobId);
+        storage.set(`day_bag_jobs_${tripDayId}`, JSON.stringify(dayJobs));
       }
 
       reset();
