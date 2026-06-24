@@ -43,21 +43,22 @@ export default function EventScreen() {
   const [showTransportSheet, setShowTransportSheet] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
 
+  const loadEvent = useCallback(async () => {
+    if (!eventId) return;
+    try {
+      const data = await getEvent(eventId as string);
+      setEvent(data);
+    } catch {
+      Alert.alert('Error', 'Failed to load event.');
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
   useFocusEffect(
     useCallback(() => {
-      if (!eventId) return;
-      async function loadEvent() {
-        try {
-          const data = await getEvent(eventId as string);
-          setEvent(data);
-        } catch {
-          Alert.alert('Error', 'Failed to load event.');
-        } finally {
-          setLoading(false);
-        }
-      }
       loadEvent();
-    }, [eventId]),
+    }, [loadEvent])
   );
 
   if (!eventId || !tripId || !tripDayId) return null;

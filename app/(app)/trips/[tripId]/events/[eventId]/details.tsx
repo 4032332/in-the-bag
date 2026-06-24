@@ -15,7 +15,7 @@ export function EventDetailsTab({ event, canAddTransport, onAddTransport }: Prop
   return (
     <View style={styles.container}>
       {fields.map((field) => {
-        const value = (event as Record<string, unknown>)[field.name];
+        const value = (event as unknown as Record<string, unknown>)[field.name];
         if (value == null || value === '') return null;
         return (
           <View key={field.name} style={styles.fieldRow}>

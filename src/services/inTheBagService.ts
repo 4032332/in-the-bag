@@ -53,7 +53,7 @@ export async function addItem(title: string, scope: InTheBagScope) {
   const row = buildScopedRow(trimmed, scope);
   const { data, error } = await supabase
     .from('in_the_bag_items')
-    .insert(row)
+    .insert(row as any)
     .select()
     .single();
   if (error) throw error;
@@ -67,7 +67,7 @@ export async function togglePacked(itemIds: string[], isPacked: boolean) {
   // marks it packed for the whole day."
   const { error } = await supabase
     .from('in_the_bag_items')
-    .update({ is_packed: isPacked })
+    .update({ is_packed: isPacked } as any)
     .in('id', itemIds);
   if (error) throw error;
 }
