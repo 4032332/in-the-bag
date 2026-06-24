@@ -287,6 +287,7 @@ export interface Database {
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
 
@@ -401,3 +402,19 @@ export interface AsyncJob {
   completed_at: string | null;
   error: string | null;
 }
+
+export interface InTheBagItem {
+  id: string;
+  trip_id: string;
+  trip_day_id: string | null;
+  event_id: string | null;
+  title: string;
+  is_packed: boolean;
+  is_ai_suggested: boolean;
+  created_at: string;
+}
+
+export type InTheBagScope =
+  | { kind: 'trip'; trip_id: string }
+  | { kind: 'day'; trip_id: string; trip_day_id: string }
+  | { kind: 'event'; trip_id: string; event_id: string };
