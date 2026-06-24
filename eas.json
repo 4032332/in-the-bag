@@ -1,0 +1,22 @@
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "DEMO_MODE_ENABLED": "true"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "DEMO_MODE_ENABLED": "true"
+      }
+    },
+    "production": {
+      "env": {
+        "DEMO_MODE_ENABLED": "false"
+      }
+    }
+  }
+}
