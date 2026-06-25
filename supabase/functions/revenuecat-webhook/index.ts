@@ -9,7 +9,13 @@ const REVENUECAT_WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') || '
 // https://<project-ref>.supabase.co/functions/v1/revenuecat-webhook
 
 serve(async (req: Request) => {
-  // 1. Verify Authorization header (constant-time comparison not strictly necessary in Deno for simple string if we just do direct equality, but good practice. A direct `===` is fine since RC uses a plain shared secret)
+  // Reject startup-misconfigured deployments immediately — an empty secret would
+  // allow any request with an empty Authorization header to pass validation.
+  if (!REVENUECAT_WEBHOOK_SECRET) {
+    console.error('REVENUECAT_WEBHOOK_SECRET is not set')
+    return new Response('Service misconfigured', { status: 500 })
+  }
+
   const authHeader = req.headers.get('Authorization')
   if (!authHeader || authHeader !== REVENUECAT_WEBHOOK_SECRET) {
     return new Response('Unauthorized', { status: 401 })

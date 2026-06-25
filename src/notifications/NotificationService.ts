@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications'
+import Constants from 'expo-constants'
 import { storage } from '@/lib/mmkv'
 import { OFFLINE_DOCS_CATEGORY, SAVE_NOW_ACTION, LATER_ACTION } from './notifications.types'
 
@@ -36,7 +37,8 @@ export async function registerActionCategories() {
 
 export async function getExpoPushToken(): Promise<string | null> {
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync()
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId })
     const token = tokenData.data
     storage.set('expo_push_token', token)
     return token

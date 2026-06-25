@@ -3,7 +3,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 serve(async (req) => {
   try {
-    // Check if this is a valid cron trigger (optional security layer, assuming Supabase handles it or checking headers)
+    // Guard against external invocation. Set CRON_SECRET in Supabase Edge Function
+    // secrets; the Supabase cron scheduler sends it as a Bearer token automatically.
+    const cronSecret = Deno.env.get('CRON_SECRET')
+    if (cronSecret) {
+      const authHeader = req.headers.get('Authorization')
+      if (authHeader !== `Bearer ${cronSecret}`) {
+        return new Response('Unauthorized', { status: 401 })
+      }
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
@@ -13,11 +22,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Using raw SQL is not directly supported by standard supabase-js without an RPC.
-    // Wait, with supabase-js v2 we can't do raw SQL directly.
-    // Instead we can query where snoozed_until <= now() and update them.
-    
-    // First, find all tasks that need resetting
     const nowIso = new Date().toISOString()
     const { data: tasks, error: fetchError } = await supabase
       .from('trip_tasks')
@@ -31,14 +35,14 @@ serve(async (req) => {
 
     if (tasks && tasks.length > 0) {
       const taskIds = tasks.map(t => t.id)
-      
+
       const { error: updateError } = await supabase
         .from('trip_tasks')
         .update({ snoozed_until: null })
         .in('id', taskIds)
 
       if (updateError) throw updateError
-      
+
       resetCount = taskIds.length
     }
 

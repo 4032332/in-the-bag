@@ -17,9 +17,15 @@ export function cacheSubscriptionStatus(isPremium: boolean, sponsorTripIds: stri
   storage.set('sub_sponsor_trip_ids', JSON.stringify(sponsorTripIds))
 }
 
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+
 export function readCachedStatus(): CachedSubscription | null {
   const cachedAt = storage.getString('sub_cached_at')
   if (!cachedAt) return null
+
+  // Treat stale cache as a miss so the caller refetches from Supabase.
+  // Ensures cancelled users lose premium access within 24 hours even offline.
+  if (Date.now() - new Date(cachedAt).getTime() > CACHE_TTL_MS) return null
 
   const isPremium = storage.getBoolean('sub_is_premium') ?? false
   const sponsorTripIdsStr = storage.getString('sub_sponsor_trip_ids')

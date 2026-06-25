@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native'
-import { useSubscription } from '../../hooks/useSubscription'
+import { useSubscription } from '@/hooks/useSubscription'
 import { supabase } from '@/lib/supabase'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '@/hooks/useAuth'
 import { isDemoMode, getDemoTier } from '@/lib/demoMode'
 
 jest.mock('@/lib/supabase', () => ({
@@ -10,7 +10,7 @@ jest.mock('@/lib/supabase', () => ({
   },
 }))
 
-jest.mock('../../hooks/useAuth', () => ({
+jest.mock('@/hooks/useAuth', () => ({
   useAuth: jest.fn(),
 }))
 

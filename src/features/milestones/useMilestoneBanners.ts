@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { BannerKey, MilestoneBannerState, ActiveBanner } from './milestones.types'
 import { offlineDocumentDownload } from '../offline/offlineDocumentDownload'
@@ -6,8 +6,9 @@ import { offlineDocumentDownload } from '../offline/offlineDocumentDownload'
 export function useMilestoneBanners(tripId: string, userId: string, departureDateISO: string) {
   const [states, setStates] = useState<Record<string, MilestoneBannerState>>({})
   const [activeBanners, setActiveBanners] = useState<ActiveBanner[]>([])
+  const [mutateError, setMutateError] = useState<string | null>(null)
 
-  const loadStates = async () => {
+  const loadStates = useCallback(async () => {
     const { data } = await supabase
       .from('milestone_banner_states')
       .select('*')
@@ -21,13 +22,13 @@ export function useMilestoneBanners(tripId: string, userId: string, departureDat
       }
       setStates(stateMap)
     }
-  }
+  }, [tripId, userId])
 
   useEffect(() => {
     if (tripId && userId) {
       loadStates()
     }
-  }, [tripId, userId])
+  }, [tripId, userId, loadStates])
 
   useEffect(() => {
     if (!departureDateISO) return
@@ -38,11 +39,7 @@ export function useMilestoneBanners(tripId: string, userId: string, departureDat
 
     const computedBanners: ActiveBanner[] = []
 
-    const checkAndAdd = (key: BannerKey, maxDays: number, minDays: number = 0) => {
-      // Check window: we use <= maxDays and > minDays (actually day of is 0, so >= minDays)
-      // For wifi_day_of, daysUntilDeparture is between 0 and 1 (or slightly negative if within the same day)
-      // We will simplify: daysUntilDeparture <= maxDays
-      // Wait, if departure date is past, daysUntilDeparture is negative.
+    const checkAndAdd = (key: BannerKey, maxDays: number) => {
       if (daysUntilDeparture <= maxDays && daysUntilDeparture >= -1) {
         const state = states[key] || null
 
@@ -67,7 +64,6 @@ export function useMilestoneBanners(tripId: string, userId: string, departureDat
     checkAndAdd('visa_14d', 14)
     checkAndAdd('esim_7d', 7)
     checkAndAdd('offline_docs_7d', 7)
-    // wifi_day_of shows only if today is the departure date (daysUntil <= 1 and >= -1)
     if (daysUntilDeparture <= 1 && daysUntilDeparture >= -1) {
       checkAndAdd('wifi_day_of', 1)
     }
@@ -75,8 +71,11 @@ export function useMilestoneBanners(tripId: string, userId: string, departureDat
     setActiveBanners(computedBanners)
   }, [states, departureDateISO])
 
-  const mutate = async (key: BannerKey, updates: Partial<MilestoneBannerState>) => {
-    const { data } = await supabase
+  // Returns true on success, false on failure. Callers should check the return
+  // value and surface mutateError to the user if false.
+  const mutate = async (key: BannerKey, updates: Partial<MilestoneBannerState>): Promise<boolean> => {
+    setMutateError(null)
+    const { data, error } = await supabase
       .from('milestone_banner_states')
       .upsert({
         trip_id: tripId,
@@ -87,12 +86,15 @@ export function useMilestoneBanners(tripId: string, userId: string, departureDat
       .select()
       .single()
 
+    if (error) {
+      setMutateError(error.message)
+      return false
+    }
+
     if (data) {
       setStates(prev => ({ ...prev, [key]: data as any as MilestoneBannerState }))
-    } else {
-      // Optimistic update if needed or just reload
-      loadStates()
     }
+    return true
   }
 
   const confirmBanner = (key: BannerKey) => mutate(key, { dismissed_at: new Date().toISOString(), action_taken: 'confirm' })
@@ -103,12 +105,13 @@ export function useMilestoneBanners(tripId: string, userId: string, departureDat
     return mutate(key, { resurface_at })
   }
   const saveNowBanner = async (key: BannerKey) => {
-    await mutate(key, { dismissed_at: new Date().toISOString(), action_taken: 'save_now' })
-    await offlineDocumentDownload(tripId, userId)
+    const ok = await mutate(key, { dismissed_at: new Date().toISOString(), action_taken: 'save_now' })
+    if (ok) await offlineDocumentDownload(tripId, userId)
   }
 
   return {
     activeBanners,
+    mutateError,
     confirmBanner,
     dismissBanner,
     snoozeBanner,

@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../src/hooks/useAuth';
-import { usePremium } from '../../src/context/SubscriptionContext';
-import { MemoriesSection } from '../../src/components/memories/MemoriesSection';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import { usePremium } from '@/context/SubscriptionContext';
+import { MemoriesSection } from '@/components/memories/MemoriesSection';
 
 export default function HomeScreen() {
   const router = useRouter();
