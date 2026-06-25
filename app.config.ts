@@ -15,6 +15,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSHealthUpdateUsageDescription: 'In the Bag does not write any health data.',
     },
   },
+  android: {
+    intentFilters: [
+      {
+        action: 'VIEW',
+        data: [{ scheme: 'inthebag', host: 'invite' }],
+        category: ['BROWSABLE', 'DEFAULT'],
+      },
+    ],
+  },
+  plugins: ['expo-asset', 'expo-router'],
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,

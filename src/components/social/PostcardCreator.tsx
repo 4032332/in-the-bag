@@ -1,11 +1,11 @@
 import React from 'react'
 import { View, Button, StyleSheet, ActivityIndicator } from 'react-native'
-import { Canvas, Rect, Image, useImage, LinearGradient, vec, Text as SkiaText, useFont, useCanvasRef, SkiaDomView } from '@shopify/react-native-skia'
+import { Canvas, Rect, Image, useImage, LinearGradient, vec, Text as SkiaText, useFont, useCanvasRef, CanvasRef } from '@shopify/react-native-skia'
 
 interface PostcardCreatorProps {
   trip: any
   day?: any
-  onSave: (ref: React.RefObject<SkiaDomView>) => void
+  onSave: (ref: React.RefObject<CanvasRef | null>) => void
   isSaving: boolean
 }
 

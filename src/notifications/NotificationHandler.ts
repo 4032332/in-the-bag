@@ -14,7 +14,8 @@ export function initNotificationHandler(router: Router) {
   // Foreground events - display only (already default behavior with handler configuration usually)
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: false,
     }),

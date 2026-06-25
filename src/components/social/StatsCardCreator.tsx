@@ -1,12 +1,12 @@
 import React from 'react'
 import { View, Button, StyleSheet, ActivityIndicator } from 'react-native'
-import { Canvas, Rect, Text as SkiaText, useFont, useCanvasRef, SkiaDomView } from '@shopify/react-native-skia'
+import { Canvas, Rect, Text as SkiaText, useFont, useCanvasRef, CanvasRef } from '@shopify/react-native-skia'
 
 interface StatsCardCreatorProps {
   trip: any
   day?: any
   healthKitSteps?: number
-  onSave: (ref: React.RefObject<SkiaDomView>) => void
+  onSave: (ref: React.RefObject<CanvasRef | null>) => void
   isSaving: boolean
 }
 

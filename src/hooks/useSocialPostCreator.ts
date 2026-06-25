@@ -1,13 +1,13 @@
 import { useState, RefObject } from 'react'
 import * as MediaLibrary from 'expo-media-library'
 import { requestCameraRollPermission, showPermissionDeniedAlert } from '../utils/cameraRollPermission'
-import { SkiaDomView } from '@shopify/react-native-skia'
+import { CanvasRef } from '@shopify/react-native-skia'
 
 export function useSocialPostCreator() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const performSave = async (canvasRef: RefObject<SkiaDomView>) => {
+  const performSave = async (canvasRef: RefObject<CanvasRef | null>) => {
     if (!canvasRef.current) return
 
     setIsSaving(true)
@@ -47,11 +47,11 @@ export function useSocialPostCreator() {
     }
   }
 
-  const savePostcard = async (trip: any, day: any, canvasRef: RefObject<SkiaDomView>) => {
+  const savePostcard = async (trip: any, day: any, canvasRef: RefObject<CanvasRef | null>) => {
     await performSave(canvasRef)
   }
 
-  const saveStatsCard = async (trip: any, day: any, healthKitData: any, canvasRef: RefObject<SkiaDomView>) => {
+  const saveStatsCard = async (trip: any, day: any, healthKitData: any, canvasRef: RefObject<CanvasRef | null>) => {
     await performSave(canvasRef)
   }
 
