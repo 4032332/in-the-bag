@@ -1,0 +1,7 @@
+project_id = "in-the-bag"
+
+[functions.snooze-reset-cron]
+verify_jwt = false
+
+[experimental.cron]
+"snooze-reset-cron" = "0 * * * *"
