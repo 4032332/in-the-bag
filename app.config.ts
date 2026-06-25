@@ -10,6 +10,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     bundleIdentifier: 'app.inthebag',
     supportsTablet: false,
+    infoPlist: {
+      NSHealthShareUsageDescription: 'In the Bag reads your step count, active energy, and floors climbed during travel dates to show your travel health stats.',
+      NSHealthUpdateUsageDescription: 'In the Bag does not write any health data.',
+    },
   },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
