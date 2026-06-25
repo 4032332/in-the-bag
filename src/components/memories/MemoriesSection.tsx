@@ -4,8 +4,6 @@ import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { MemoriesStyleToggle } from './MemoriesStyleToggle'
 import { useMemoriesStyle } from '../../hooks/useMemoriesStyle'
-import { Trip } from '../../types/database' // Assumes a Trip type exists or adjust to your setup
-
 // Import renderers (to be created)
 import { PostcardRenderer } from './styles/PostcardRenderer'
 import { FridgeMagnetRenderer } from './styles/FridgeMagnetRenderer'

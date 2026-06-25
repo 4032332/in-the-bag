@@ -11,7 +11,7 @@ export default function SetupLocationScreen() {
 
   async function handleNext() {
     const citizenshipArr = citizenship.split(',').map(s => s.trim()).filter(Boolean);
-    const { error } = await supabase.from('users').update({ country_of_residency: residency.trim(), citizenship_countries: citizenshipArr }).eq('id', user!.id);
+    const { error } = await (supabase.from('users') as any).update({ country_of_residency: residency.trim(), citizenship_countries: citizenshipArr }).eq('id', user!.id);
     if (error) { Alert.alert('Error', error.message); return; }
     router.push('/onboarding/setup-medical');
   }

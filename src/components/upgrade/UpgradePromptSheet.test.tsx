@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, fireEvent } from '@testing-library/react-native'
+import { render, fireEvent, waitFor } from '@testing-library/react-native'
 import { UpgradePromptSheet } from './UpgradePromptSheet'
 import { purchaseMonthly, purchaseLifetime, restorePurchases } from '@/lib/revenuecat'
 import { setDemoTier } from '@/lib/demoMode'
@@ -36,7 +36,7 @@ describe('UpgradePromptSheet', () => {
   })
 
   it('renders correct buttons for variant authenticated', async () => {
-    const { findByText } = render(
+    const { findByText } = await render(
       <UpgradePromptSheet
         visible={true}
         onClose={jest.fn()}
@@ -45,8 +45,7 @@ describe('UpgradePromptSheet', () => {
         variant="authenticated"
       />
     )
-    
-    // Wait for the offerings to load
+
     const monthlyText = await findByText('Premium Monthly')
     expect(monthlyText).toBeTruthy()
 
@@ -57,8 +56,8 @@ describe('UpgradePromptSheet', () => {
     expect(restoreText).toBeTruthy()
   })
 
-  it('renders Switch to Premium for variant demo', () => {
-    const { getByText } = render(
+  it('renders Switch to Premium for variant demo', async () => {
+    const { getByText } = await render(
       <UpgradePromptSheet
         visible={true}
         onClose={jest.fn()}
@@ -67,13 +66,13 @@ describe('UpgradePromptSheet', () => {
         variant="demo"
       />
     )
-    
+
     expect(getByText('Switch to Premium (demo)')).toBeTruthy()
   })
 
-  it('calls onClose when Maybe Later is pressed', () => {
+  it('calls onClose when Maybe Later is pressed', async () => {
     const mockClose = jest.fn()
-    const { getByText } = render(
+    const { getByText } = await render(
       <UpgradePromptSheet
         visible={true}
         onClose={mockClose}
@@ -82,14 +81,14 @@ describe('UpgradePromptSheet', () => {
         variant="demo"
       />
     )
-    
+
     fireEvent.press(getByText('Maybe Later'))
     expect(mockClose).toHaveBeenCalled()
   })
 
-  it('demo switch sets MMKV and calls onClose', () => {
+  it('demo switch sets MMKV and calls onClose', async () => {
     const mockClose = jest.fn()
-    const { getByText } = render(
+    const { getByText } = await render(
       <UpgradePromptSheet
         visible={true}
         onClose={mockClose}
@@ -98,7 +97,7 @@ describe('UpgradePromptSheet', () => {
         variant="demo"
       />
     )
-    
+
     fireEvent.press(getByText('Switch to Premium (demo)'))
     expect(setDemoTier).toHaveBeenCalledWith('premium')
     expect(mockRefetch).toHaveBeenCalled()

@@ -26,9 +26,10 @@ export function useMemoriesStyle() {
         .eq('id', user.id)
         .single()
         .then(({ data, error }) => {
-          if (!error && data?.pref_memories_style && MEMORIES_STYLES.includes(data.pref_memories_style)) {
-            storage.set('pref_memories_style', data.pref_memories_style)
-            setStyleState(data.pref_memories_style as MemoriesStyle)
+          const d = data as any
+          if (!error && d?.pref_memories_style && MEMORIES_STYLES.includes(d.pref_memories_style)) {
+            storage.set('pref_memories_style', d.pref_memories_style)
+            setStyleState(d.pref_memories_style as MemoriesStyle)
           }
         })
     }
@@ -39,8 +40,7 @@ export function useMemoriesStyle() {
     storage.set('pref_memories_style', newStyle)
 
     if (user) {
-      await supabase
-        .from('profiles')
+      await (supabase.from('profiles') as any)
         .update({ pref_memories_style: newStyle })
         .eq('id', user.id)
     }

@@ -71,8 +71,8 @@ export function useSubscription() {
       let sponsorIds: string[] = []
 
       if (sponsoredTrips && sponsoredTrips.length > 0) {
-        const tripIds = sponsoredTrips.map(tp => tp.trip_id)
-        
+        const tripIds = (sponsoredTrips as any[]).map((tp: any) => tp.trip_id)
+
         // Find if any of these trips has a premium sponsor
         const { data: sponsors } = await supabase
           .from('trip_participants')
@@ -82,7 +82,7 @@ export function useSubscription() {
 
         if (sponsors && sponsors.length > 0) {
           isSponsored = true
-          sponsorIds = sponsors.map(s => s.trip_id)
+          sponsorIds = (sponsors as any[]).map((s: any) => s.trip_id)
         }
       }
 

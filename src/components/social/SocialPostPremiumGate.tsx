@@ -25,7 +25,7 @@ export function SocialPostPremiumGate({ onPressAllowed }: { onPressAllowed: () =
         onClose={() => setShowUpgrade(false)}
         featureTitle="Social Media Posts"
         featureDescription="Social Media Posts are a Premium feature"
-        variant={isDemoMode && demoTier === 'free' ? 'demo' : 'live'}
+        variant={isDemoMode && demoTier === 'free' ? 'demo' : 'authenticated'}
       />
     </>
   )

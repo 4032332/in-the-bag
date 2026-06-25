@@ -39,9 +39,10 @@ export async function offlineDocumentDownload(tripId: string, userId: string): P
 
     let firstDayId = null
     let lastDayId = null
-    if (tripDays && tripDays.length > 0) {
-      firstDayId = tripDays[0].id
-      lastDayId = tripDays[tripDays.length - 1].id
+    const days = (tripDays || []) as any[]
+    if (days.length > 0) {
+      firstDayId = days[0].id
+      lastDayId = days[days.length - 1].id
     }
 
     const docsToDownload: any[] = []

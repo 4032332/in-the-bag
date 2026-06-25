@@ -33,7 +33,7 @@ export function PassportStampRenderer({ trips }: { trips: any[] }) {
     return (
       <View key={trip.id} style={styles.stampWrapper}>
         <Canvas style={{ width: 120, height: 120 }}>
-          <Group transform={[{ rotate: (rotation * Math.PI) / 180, origin: { x: 60, y: 60 } }]}>
+          <Group transform={[{ rotate: (rotation * Math.PI) / 180 }]} origin={{ x: 60, y: 60 }}>
             {/* Outer rings */}
             <Circle cx={60} cy={60} r={56} style="stroke" strokeWidth={3} color={color} />
             <Circle cx={60} cy={60} r={50} style="stroke" strokeWidth={1} color={color} />

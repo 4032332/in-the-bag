@@ -48,7 +48,7 @@ describe('useSubscription', () => {
     });
     (supabase.from as jest.Mock).mockReturnValue({ select: mockSelect });
 
-    const { result } = renderHook(() => useSubscription())
+    const { result } = await renderHook(() => useSubscription())
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
@@ -61,7 +61,7 @@ describe('useSubscription', () => {
     ;(isDemoMode as jest.Mock).mockReturnValue(true)
     ;(getDemoTier as jest.Mock).mockReturnValue('premium')
 
-    const { result } = renderHook(() => useSubscription())
+    const { result } = await renderHook(() => useSubscription())
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
@@ -75,7 +75,7 @@ describe('useSubscription', () => {
     ;(isDemoMode as jest.Mock).mockReturnValue(true)
     ;(getDemoTier as jest.Mock).mockReturnValue('free')
 
-    const { result } = renderHook(() => useSubscription())
+    const { result } = await renderHook(() => useSubscription())
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)

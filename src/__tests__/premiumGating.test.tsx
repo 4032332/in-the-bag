@@ -1,5 +1,5 @@
 import React from 'react'
-import { render } from '@testing-library/react-native'
+import { render, waitFor } from '@testing-library/react-native'
 import ExploreScreen from '../../app/(tabs)/explore'
 import { usePremium } from '@/context/SubscriptionContext'
 
@@ -12,21 +12,24 @@ describe('Premium Gating Integration', () => {
     jest.clearAllMocks()
   })
 
-  it('ExploreScreen shows UpgradePromptSheet when !isPremium', () => {
+  it('ExploreScreen shows UpgradePromptSheet when !isPremium', async () => {
     ;(usePremium as jest.Mock).mockReturnValue({ isPremium: false })
 
-    const { getByText } = render(<ExploreScreen />)
-    
-    // The UpgradePromptSheet should render its title
-    expect(getByText('Explore with AI')).toBeTruthy()
+    const { getByText } = await render(<ExploreScreen />)
+
+    await waitFor(() => {
+      expect(getByText('Explore with AI')).toBeTruthy()
+    })
   })
 
-  it('ExploreScreen shows content when isPremium', () => {
+  it('ExploreScreen shows content when isPremium', async () => {
     ;(usePremium as jest.Mock).mockReturnValue({ isPremium: true })
 
-    const { getByText, queryByText } = render(<ExploreScreen />)
-    
-    expect(getByText('AI-powered holiday planning features go here!')).toBeTruthy()
-    expect(queryByText('Explore with AI')).toBeNull()
+    const { getByText, queryByText } = await render(<ExploreScreen />)
+
+    await waitFor(() => {
+      expect(getByText('AI-powered holiday planning features go here!')).toBeTruthy()
+      expect(queryByText('Explore with AI')).toBeNull()
+    })
   })
 })

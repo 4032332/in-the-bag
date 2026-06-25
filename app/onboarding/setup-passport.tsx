@@ -10,7 +10,7 @@ export default function SetupPassportScreen() {
 
   async function handleFinish() {
     if (passportExpiry.trim()) {
-      const { error } = await supabase.from('users').update({ passport_expiry: passportExpiry.trim() }).eq('id', user!.id);
+      const { error } = await (supabase.from('users') as any).update({ passport_expiry: passportExpiry.trim() }).eq('id', user!.id);
       if (error) { Alert.alert('Error', error.message); return; }
     }
     router.replace('/(tabs)/home');

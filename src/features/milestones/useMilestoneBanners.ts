@@ -82,7 +82,7 @@ export function useMilestoneBanners(tripId: string, userId: string, departureDat
         user_id: userId,
         banner_key: key,
         ...updates
-      }, { onConflict: 'trip_id,user_id,banner_key' })
+      } as any, { onConflict: 'trip_id,user_id,banner_key' })
       .select()
       .single()
 

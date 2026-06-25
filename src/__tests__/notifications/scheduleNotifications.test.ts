@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications'
 import { storage } from '@/lib/mmkv'
-import { scheduleTripNotifications, cancelTripNotifications, getScheduledNotificationIds } from '../../notifications/scheduleNotifications'
+import { scheduleTripNotifications, cancelTripNotifications } from '../../notifications/scheduleNotifications'
 import { NotificationPayload, SAVE_NOW_ACTION, LATER_ACTION, OFFLINE_DOCS_CATEGORY } from '../../notifications/notifications.types'
 
 jest.mock('expo-notifications', () => ({

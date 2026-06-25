@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { View, ScrollView, StyleSheet } from 'react-native'
-import { Canvas, Image, useImage, Text as SkiaText, useFont, Group, ClipPath } from '@shopify/react-native-skia'
+import { Canvas, Image, useImage, Text as SkiaText, useFont, Group } from '@shopify/react-native-skia'
 import { getPieceGeometry, getPieceGridPosition, PIECE_SIZE, TAB_PROTRUSION, createPuzzlePath, getGridDimensions } from '../../../utils/puzzlePieceGeometry'
 
 export function PuzzlePieceRenderer({ trips }: { trips: any[] }) {

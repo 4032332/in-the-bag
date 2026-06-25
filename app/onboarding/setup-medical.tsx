@@ -17,7 +17,7 @@ export default function SetupMedicalScreen() {
   async function handleNext() {
     const updates = Object.fromEntries(Object.entries(fields).filter(([, v]) => v.trim() !== ''));
     if (Object.keys(updates).length > 0) {
-      const { error } = await supabase.from('users').update(updates).eq('id', user!.id);
+      const { error } = await (supabase.from('users') as any).update(updates).eq('id', user!.id);
       if (error) { Alert.alert('Error', error.message); return; }
     }
     router.push('/onboarding/setup-passport');
