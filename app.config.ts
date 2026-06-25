@@ -18,6 +18,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-    demoModeEnabled: process.env.DEMO_MODE_ENABLED === 'true',
+    openAiApiKey: process.env.OPENAI_API_KEY,
+    eas: {
+      projectId: '4cdd5915-bc44-482a-ad51-2cc6b3e8a4a7',
+    },
+    isTestFlight: process.env.IS_TESTFLIGHT === 'true',
+    REVENUECAT_API_KEY_IOS: process.env.REVENUECAT_API_KEY_IOS,
   },
 });

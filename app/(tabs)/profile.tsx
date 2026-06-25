@@ -2,13 +2,28 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
+import { useState } from 'react';
+import { usePremium } from '../../src/context/SubscriptionContext';
+import { UpgradePromptSheet } from '../../src/components/upgrade/UpgradePromptSheet';
+
 export default function ProfileScreen() {
   const router = useRouter();
+  const { isPremium } = usePremium();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Profile</Text>
       <Text style={styles.empty}>Your profile and family members will appear here.</Text>
+
+      <TouchableOpacity
+        style={styles.statsRow}
+        onPress={() => setShowUpgrade(true)}
+        accessibilityRole="button"
+      >
+        <Text style={styles.statsRowText}>{isPremium ? 'Manage Subscription' : 'Upgrade to Premium'}</Text>
+        <Text style={styles.chevron}>{'>'}</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.statsRow}
@@ -18,6 +33,14 @@ export default function ProfileScreen() {
         <Text style={styles.statsRowText}>Stats</Text>
         <Text style={styles.chevron}>{'>'}</Text>
       </TouchableOpacity>
+
+      <UpgradePromptSheet
+        visible={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        featureTitle="Premium Subscription"
+        featureDescription="Unlock AI features and share with your family."
+        variant="authenticated"
+      />
     </View>
   );
 }

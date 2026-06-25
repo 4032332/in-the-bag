@@ -11,12 +11,17 @@ import { GlobalNotificationListener } from '../src/components/GlobalNotification
 import { initNotificationHandler } from '../src/notifications/NotificationHandler';
 import { useRouter } from 'expo-router';
 
+import { initRevenueCat } from '../src/lib/revenuecat';
+
+import { SubscriptionProvider } from '../src/context/SubscriptionContext';
+
 export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
     registerActionCategories().catch(console.error);
     initNotificationHandler(router);
+    initRevenueCat();
   }, [router]);
 
   return (
@@ -24,9 +29,11 @@ export default function RootLayout() {
       <AuthProvider>
         <GlobalNotificationListener />
         <DemoModeProvider>
-          <DemoBanner />
-          <Stack screenOptions={{ headerShown: false }} />
-          <StatusBar style="auto" />
+          <SubscriptionProvider>
+            <DemoBanner />
+            <Stack screenOptions={{ headerShown: false }} />
+            <StatusBar style="auto" />
+          </SubscriptionProvider>
         </DemoModeProvider>
       </AuthProvider>
     </GestureHandlerRootView>
