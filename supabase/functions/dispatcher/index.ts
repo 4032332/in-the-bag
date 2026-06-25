@@ -55,43 +55,34 @@ Deno.serve(async (req) => {
 
     const asyncJob = job as AsyncJob;
 
-    // Route by job.type
-    // Handlers will be invoked dynamically or imported. Since Deno allows dynamic imports, we can invoke the handler function directly.
-    // However, Deno deploy Edge Functions might prefer dynamic import or static. We'll use Deno's async execution without awaiting so we can return 200 immediately, 
-    // but the prompt says: "Return 200 { success: true } after invoking the handler; handler is responsible for updating job status." 
-    // Actually, edge functions terminate when response is sent. We must await the handler, or the function terminates.
-    // Let's await the handler.
+    // Route by invoking the per-job-type Edge Function directly via the admin client.
+    // Each handler is its own deployed function — cross-directory dynamic imports are not
+    // bundled by Supabase and fire-and-forget patterns are killed when the response is sent.
+    // Invoking via supabaseAdmin.functions.invoke() sends an authenticated HTTP request to
+    // the target function and awaits its completion before we return 200.
+    const handlerName: Record<string, string> = {
+      cover_photo_fetch: 'cover-photo-fetch',
+      pre_trip_checklist_generate: 'pre-trip-checklist-generate',
+      treasure_map_generate: 'treasure-map-generate',
+      in_the_bag_suggest: 'in-the-bag-suggest',
+      ai_trip_suggest: 'ai-trip-suggest',
+      ai_day_suggest: 'ai-day-suggest',
+      flight_lookup: 'flight-lookup',
+      youtube_extract: 'youtube-extract',
+      tiktok_extract: 'tiktok-extract',
+    };
 
-    switch (asyncJob.type) {
-      case 'cover_photo_fetch':
-        import('../cover-photo-fetch/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      case 'pre_trip_checklist_generate':
-        import('../pre-trip-checklist-generate/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      case 'treasure_map_generate':
-        import('../treasure-map-generate/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      case 'in_the_bag_suggest':
-        import('../in-the-bag-suggest/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      case 'ai_trip_suggest':
-        import('../ai-trip-suggest/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      case 'ai_day_suggest':
-        import('../ai-day-suggest/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      case 'flight_lookup':
-        import('../flight-lookup/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      case 'youtube_extract':
-        import('../youtube-extract/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      case 'tiktok_extract':
-        import('../tiktok-extract/index.ts').then(m => m.handleJob(asyncJob)).catch(console.error);
-        break;
-      default:
-        return new Response(JSON.stringify({ error: 'Unrecognised job type' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    const fnName = handlerName[asyncJob.type];
+    if (!fnName) {
+      return new Response(JSON.stringify({ error: 'Unrecognised job type' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const { error: invokeError } = await supabaseAdmin.functions.invoke(fnName, {
+      body: { jobId: asyncJob.id },
+    });
+
+    if (invokeError) {
+      return new Response(JSON.stringify({ error: `Handler invocation failed: ${invokeError.message}` }), { status: 502, headers: { 'Content-Type': 'application/json' } });
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });

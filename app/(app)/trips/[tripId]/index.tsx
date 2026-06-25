@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Trip, TripDay, TripDestination, TripParticipant } from '../../../../src/types/database';
 import { getTrip } from '../../../../src/services/trips';
 import { listTripDays } from '../../../../src/services/tripDays';
@@ -8,18 +8,31 @@ import { DayTabBar } from '../../../../src/components/trips/DayTabBar';
 import { TripSummary } from './summary';
 import { DayView } from './day/[dayId]';
 import { useAuth } from '../../../../src/hooks/useAuth';
+import { useDemoMode } from '../../../../src/hooks/useDemoMode';
+import { TouchableOpacity, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 type ActiveView = 'summary' | string; // string = tripDay.id
 
 export default function TripScreen() {
   const { tripId, readOnly: readOnlyParam } = useLocalSearchParams<{ tripId: string; readOnly?: string }>();
   const { user } = useAuth();
+  const { demoTier } = useDemoMode();
+  const router = useRouter();
 
   const [trip, setTrip] = useState<(Trip & { trip_destinations: TripDestination[]; trip_participants: TripParticipant[] }) | null>(null);
   const [days, setDays] = useState<TripDay[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>('summary');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const handleTreasureMapPress = () => {
+    if (demoTier === 'premium') {
+      router.push(`/trips/${tripId}/treasure-map`);
+    } else {
+      Alert.alert('Premium Feature', 'Upgrade to Premium to view the Treasure Map.');
+    }
+  };
 
   useEffect(() => {
     if (!tripId) return;
@@ -41,6 +54,15 @@ export default function TripScreen() {
 
   return (
     <View style={styles.container}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity onPress={handleTreasureMapPress} style={{ marginRight: 8, padding: 8 }}>
+              <Ionicons name="map-outline" size={24} color="#007AFF" />
+            </TouchableOpacity>
+          )
+        }}
+      />
       {isReadOnly && (
         <View style={styles.readOnlyBanner}>
           <Text style={styles.readOnlyText}>This trip is in the past</Text>
