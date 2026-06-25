@@ -7,16 +7,6 @@ export async function createTripDays(tripId: string, days: Omit<TripDay, 'id'>[]
   return data ?? [];
 }
 
-export async function getTripDay(dayId: string): Promise<TripDay | null> {
-  const { data, error } = await supabase
-    .from('trip_days')
-    .select('*')
-    .eq('id', dayId)
-    .single();
-  if (error) throw error;
-  return data ?? null;
-}
-
 export async function listTripDays(tripId: string): Promise<TripDay[]> {
   const { data, error } = await supabase
     .from('trip_days')

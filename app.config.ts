@@ -15,15 +15,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSHealthUpdateUsageDescription: 'In the Bag does not write any health data.',
     },
   },
-  android: {
-    intentFilters: [
-      {
-        action: 'VIEW',
-        data: [{ scheme: 'inthebag', host: 'invite' }],
-        category: ['BROWSABLE', 'DEFAULT'],
-      },
-    ],
-  },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
@@ -34,5 +25,4 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     isTestFlight: process.env.IS_TESTFLIGHT === 'true',
     REVENUECAT_API_KEY_IOS: process.env.REVENUECAT_API_KEY_IOS,
   },
-  plugins: ['expo-asset'],
 });
