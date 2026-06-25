@@ -31,7 +31,7 @@ export default function SetupNameScreen() {
       profilePhotoUrl = urlData.publicUrl;
     }
 
-    const { error } = await supabase.from('users').update({ full_name: fullName.trim(), ...(profilePhotoUrl ? { profile_photo_url: profilePhotoUrl } : {}) }).eq('id', user.id);
+    const { error } = await (supabase.from('users') as any).update({ full_name: fullName.trim(), ...(profilePhotoUrl ? { profile_photo_url: profilePhotoUrl } : {}) }).eq('id', user.id);
     if (error) { Alert.alert('Error', error.message); return; }
     router.push('/onboarding/setup-location');
   }

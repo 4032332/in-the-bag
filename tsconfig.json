@@ -6,7 +6,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": [
-    "supabase/**/*"
-  ]
+  "exclude": ["node_modules", "supabase/functions"]
 }

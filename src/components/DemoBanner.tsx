@@ -1,37 +1,35 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActionSheetIOS } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDemoMode } from '../hooks/useDemoMode';
 import { DEMO_MODE_ENABLED } from '../lib/constants';
+import { UpgradePromptSheet } from './upgrade/UpgradePromptSheet';
 
 export function DemoBanner() {
-  const { isDemoMode, demoTier, setDemoTier } = useDemoMode();
+  const { isDemoMode, demoTier } = useDemoMode();
   const insets = useSafeAreaInsets();
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   if (!DEMO_MODE_ENABLED || !isDemoMode) return null;
 
-  function handleSwitch() {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        options: ['Switch to Free', 'Switch to Premium', 'Cancel'],
-        cancelButtonIndex: 2,
-      },
-      (idx) => {
-        if (idx === 0) setDemoTier('free');
-        else if (idx === 1) setDemoTier('premium');
-      }
-    );
-  }
-
   return (
-    <View style={[styles.banner, { paddingTop: insets.top + 6 }]}>
-      <Text style={styles.label}>
-        Demo Mode — {demoTier === 'premium' ? 'Premium' : 'Free'}
-      </Text>
-      <TouchableOpacity onPress={handleSwitch}>
-        <Text style={styles.switchLabel}>Switch</Text>
-      </TouchableOpacity>
-    </View>
+    <>
+      <View style={[styles.banner, { paddingTop: insets.top + 6 }]}>
+        <Text style={styles.label}>
+          Demo Mode — {demoTier === 'premium' ? 'Premium' : 'Free'}
+        </Text>
+        <TouchableOpacity onPress={() => setShowUpgrade(true)}>
+          <Text style={styles.switchLabel}>Switch</Text>
+        </TouchableOpacity>
+      </View>
+      <UpgradePromptSheet
+        visible={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        featureTitle="Demo Mode Switcher"
+        featureDescription="Switch tiers to preview the app experience."
+        variant="demo"
+      />
+    </>
   );
 }
 

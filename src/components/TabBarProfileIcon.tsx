@@ -3,6 +3,8 @@ import { View, Image, Text, StyleSheet } from 'react-native';
 import { useProfile } from '../hooks/useProfile';
 import { useDemoMode } from '../hooks/useDemoMode';
 
+import { usePremium } from '../context/SubscriptionContext';
+
 interface Props {
   size?: number;
   focused: boolean;
@@ -10,8 +12,7 @@ interface Props {
 
 export function TabBarProfileIcon({ size = 26, focused }: Props) {
   const profile = useProfile();
-  const { isDemoMode, demoTier } = useDemoMode();
-  const isPremium = isDemoMode ? demoTier === 'premium' : false;
+  const { isPremium } = usePremium();
 
   const initials = profile?.full_name
     ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
